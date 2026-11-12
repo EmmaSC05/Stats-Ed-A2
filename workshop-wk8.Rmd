@@ -81,6 +81,7 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
+sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
 
 ```
 
