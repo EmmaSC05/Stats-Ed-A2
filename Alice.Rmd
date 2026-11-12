@@ -76,6 +76,7 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 ```{r}
 smarvus_sussex
 sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
+sum(smarvus_sussex$Q7.1_24 == "1", na.rm = TRUE)
 sum(smarvus_sussex$Q8.1_21 == "5", na.rm = TRUE)
 
 ```
