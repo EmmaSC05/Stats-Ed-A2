@@ -23,19 +23,24 @@ Teams work better when members have a common understanding of the group's goals 
 So, before starting work on the project, discuss the prompts below to share your thoughts and ideas, and reach agreement within your group. This should prevent misunderstandings in the future!
 
 -   When will the group attempt to meet (what time, how often, where, how long)?
-
+friday - if possible
 -   When is it OK to skip a meeting?
-anything
+if you are busy
 
 -   How will we behave in meetings (for example, interrupting, or use of mobile phones)?
+nicely
 
 -   How do we communicate with each other outside of meetings? (e.g., what if you are running late to a meeting?)
+whatsapp
 
 -   How will we share files that we are working on together?
+github and google docs
 
 -   How will we deal with problems, like chronic lateness to meetings or team members not doing their fair share of work?
+kindly and communicate
 
 -   How will we celebrate when somebody has a good idea?
+yay congrats
 
 # SMARVUS dataset
 
