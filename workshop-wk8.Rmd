@@ -79,18 +79,32 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (a) Write your own code to find the number of students passing each check, and compare your results with the numbers given above.
 
 ```{r}
-smarvus_sussex
+# Count students passing each attention check
 sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
-sum(smarvus_sussex$Q7.1_24 == "1", na.rm = TRUE)
-sum(smarvus_sussex$Q8.1_21 == "5", na.rm = TRUE)
+sum(smarvus_sussex$Q7.1_24 == 1, na.rm = TRUE)
+sum(smarvus_sussex$Q8.1_21 == 5, na.rm = TRUE)
+sum(smarvus_sussex$Q9.1_22 == 1, na.rm = TRUE)
+sum(smarvus_sussex$Q11.1_9 == 3, na.rm = TRUE)
+sum(smarvus_sussex$Q13.1_17 == 2, na.rm = TRUE)
+sum(smarvus_sussex$Q15.1_9 == 4, na.rm = TRUE)
 
 ```
 
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
+smarvus_sussex_filtered <- smarvus_sussex %>%
+  filter(
+    attention_amnesty == "Yes",
+    Q7.1_24 == 1,
+    Q8.1_21 == 5,
+    Q9.1_22 == 1,
+    Q11.1_9 == 3,
+    Q13.1_17 == 2,
+    Q15.1_9 == 4
+  )
 
-
+nrow(smarvus_sussex_filtered)
 ```
 
 ## Scoring STARS
