@@ -105,6 +105,12 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 
 (a) Create a new copy of the filtered dataset called `smarvus_sussex_scored`, which adds a `stars_score` column containing the total score on STARS for each participant.
 
+```{r}
+smarvus_sussex_scored <- smarvus_sussex_filtered
+
+
+```
+
 (b) Produce some summary statistics for the STARS scores, and a visualisation of the distribution. (You should find that the mean STARS score in this sample is 70.189.)
 
 ```{r}
