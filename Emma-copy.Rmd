@@ -165,8 +165,30 @@ Clean the `grade` data, producing a true numerical value for each student where 
 Just as you did for the STARS scores, produce some summary statistics and a visualisation of the grade distribution.
 
 ```{r}
+smarvus_sussex_scored1 <- smarvus_sussex_scored %>%
+  mutate(
+    grade = parse_number(grade)
+  )
+
+head(smarvus_sussex_scored1$grade)
+
+summary(smarvus_sussex_scored1$grade, na.rm=TRUE)
+sd(smarvus_sussex_scored1$grade, na.rm=TRUE)
+sum(is.na(smarvus_sussex_scored1$grade))
+
+
+ggplot(smarvus_sussex_scored1, aes(x = grade)) +
+  geom_histogram(binwidth=5, colour="black", fill="lightblue")+
+  labs(
+    title = "Distribution of Statistics Grades",
+    x = "Grade (%)",
+    y = "Frequency"
+  )
 
 ```
+
+he distribution of statistics grades is negatively skewed, with one distinct peak, with most students achieving grades between approximately 60% and 80%. The mean grade was 68.21% (SD = 12.09), slightly below the median of 70%, consistent with the negative skew. There are also a few unusually low grades, which may influence the mean.
+
 
 ## Relationship between anxiety and grades
 
