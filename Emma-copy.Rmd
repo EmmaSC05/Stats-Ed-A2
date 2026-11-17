@@ -25,16 +25,22 @@ Teams work better when members have a common understanding of the group's goals 
 So, before starting work on the project, discuss the prompts below to share your thoughts and ideas, and reach agreement within your group. This should prevent misunderstandings in the future!
 
 -   When will the group attempt to meet (what time, how often, where, how long)?
+ FRIDAY
 
 -   When is it OK to skip a meeting?
+if you are busy
 
 -   How will we behave in meetings (for example, interrupting, or use of mobile phones)?
+WELL
 
 -   How do we communicate with each other outside of meetings? (e.g., what if you are running late to a meeting?)
+whatsapp
 
 -   How will we share files that we are working on together?
+on github
 
 -   How will we deal with problems, like chronic lateness to meetings or team members not doing their fair share of work?
+comm
 
 -   How will we celebrate when somebody has a good idea?
 
@@ -77,7 +83,37 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
+# (a)
+# Final attention amnesty
+sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
 
+# STARS attention check
+sum(smarvus_sussex$Q7.1_24 == 1, na.rm = TRUE)
+
+# STARS-M attention check
+sum(smarvus_sussex$Q8.1_21 == 5, na.rm = TRUE)
+
+# Extra four attention checks
+# sum(smarvus_sussex$Q9.1_22 == 1, na.rm = TRUE)
+# sum(smarvus_sussex$Q11.1_9 == 3, na.rm = TRUE)
+# sum(smarvus_sussex$Q13.1_17 == 2, na.rm = TRUE)
+# sum(smarvus_sussex$Q15.1_9 == 4, na.rm = TRUE)
+
+
+# (b)
+smarvus_sussex_filtered <- smarvus_sussex %>%
+  filter(
+    attention_amnesty == "Yes",
+    Q7.1_24 == 1,
+    Q8.1_21 == 5
+   # Q9.1_22 == 1,
+   # Q11.1_9 == 3,
+   # Q13.1_17 == 2,
+   # Q15.1_9 == 4
+  )
+
+# Check remaining responses
+nrow(smarvus_sussex_filtered)
 ```
 
 ## Scoring STARS
@@ -95,7 +131,25 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 (b) Produce some summary statistics for the STARS scores, and a visualisation of the distribution. (You should find that the mean STARS score in this sample is 70.189.)
 
 ```{r}
+#(a)
 
+smarvus_sussex_scored <- smarvus_sussex_filtered %>%
+  mutate(
+  stars_score = rowSums(across(Q7.1_1:Q7.1_23), na.rm= TRUE)
+  )
+
+#(b)
+summary(smarvus_sussex_scored$stars_score)
+sum(is.na(smarvus_sussex_scored$stars_score))
+mean(smarvus_sussex_scored$stars_score, na.rm = TRUE)
+
+ggplot(smarvus_sussex_scored, aes(x = stars_score)) +
+  geom_histogram(binwidth=5, colour="black", fill="lightblue")+
+  labs(
+    title = "Distribution of STARS Scores",
+    x = "STARS Score",
+    y = "Frequency"
+  )
 ```
 
 ## Grades
