@@ -240,8 +240,39 @@ Purely for the purposes of practicing computing a Cohen's d effect size, we will
 (b) Focus on the GCSE and A-Level groups. Compare the mean performance (`grade`) of the students in these two groups: produce a visualisation, and compute the standardised mean difference (Cohen's d). How does this compare to the d from Task 4?
 
 ```{r}
+# (a)
+smarvus_sussex_scored1 %>%
+  count(math_edu_level, sort = TRUE)
+
+# (b)
+smarvus_groups <- smarvus_sussex_scored1 %>%
+  filter(math_edu_level %in% c("GCSE", "A Level"))
+
+smarvus_groups %>%
+  group_by(math_edu_level) %>%
+  summarise(
+    n = sum(!is.na(grade)),
+    mean_grade = mean(grade, na.rm=TRUE),
+    sd_grade = sd(grade, na.rm =TRUE)
+  )
+
+ggplot(smarvus_groups, aes(x = math_edu_level, y = grade))+
+  geom_boxplot(fill = "lightblue") +
+  labs(
+    title = "Statistics Grades by Mathematics Education Level",
+    x = "Mathematics Education Level",
+    y = "Grade (%)"
+  )
+
+effectsize::cohens_d(
+  grade ~ math_edu_level,
+  data = smarvus_groups
+)
 
 ```
+A comparison of statistics grades between students with GCSE and A Level mathematics qualifications produced a Cohen's d of 0.35 (95% CI [0.08, 0.62]), indicating a small difference in mean grades. This effect was slightly smaller than the converted effect size obtained for the relationship between statistics anxiety and attainment in Task 4 (|d|=0.424). Both results suggest relatively modest associations with academic performance.
+
+
 
 ## Relationship between anxiety measures
 
@@ -258,8 +289,37 @@ One of the goals of the SMARVUS project was to investigate the relationship betw
 Compute the participants' scores for at least one of the other measures (or all three if you like), and investigate the correlation with STARS.
 
 ```{r}
+# Calculate STARS-M scores
+smarvus_sussex_scored1 <- smarvus_sussex_scored1 %>%
+  mutate(
+    stars_m_score = rowSums(
+      across(c(Q8.1_1:Q8.1_20,
+               Q7.1_9, Q7.1_12, Q7.1_17)),
+      na.rm = TRUE))
 
+# Summary statistics
+summary(smarvus_sussex_scored1$stars_m_score)
+
+# Relationship between STARS and STARS-M
+ggplot(smarvus_sussex_scored1,
+       aes(x = stars_score, y = stars_m_score)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, colour = "red") +
+  labs(
+    title = "Relationship between Statistics and Mathematics Anxiety",
+    x = "STARS Score",
+    y = "STARS-M Score"
+  )
+
+# Pearson correlation
+cor_result_m <- cor.test(
+  smarvus_sussex_scored1$stars_score,
+  smarvus_sussex_scored1$stars_m_score
+)
+
+cor_result_m
 ```
+A Pearson correlation analysis identified a very strong, statistically significant positive relationship between statistics anxiety (STARS) and mathematics anxiety (STARS-M), r(373)=0.892, p<0.001, 95% CI [0.869,0.911]. The scatterplot demonstrated a strong, approximately linear positive relationship, suggesting that students with higher statistics anxiety tend to experience higher mathematics anxiety. This relationship was substantially stronger than the negative correlation between statistics anxiety and attainment identified in Task 4 (r=-0.207). However, the shared questionnaire items may partly contribute to this association.
 
 ## Going further with the data
 
