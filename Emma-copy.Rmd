@@ -203,8 +203,29 @@ You should now be in a position to make a first attempt at addressing the overal
 (c) Use `effectsize::r_to_d` (as demonstrated in the week 8 lecture) to express the correlation as a Cohen's d effect size.
 
 ```{r}
+ggplot(smarvus_sussex_scored1, aes(x = stars_score, y = grade))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE, colour = "red")+
+  labs(
+    title = "Relationship between Statistics Anxiety and Grades",
+    x = "STARS Score",
+    y = "Grade (%)"
+  )
 
+# Pearson correlation between STARS scores and grades
+cor_result <- cor.test(
+  smarvus_sussex_scored1$stars_score,
+  smarvus_sussex_scored1$grade
+)
+
+cor_result
+
+
+# Convert Pearson's r to Cohen's d
+effectsize::r_to_d(cor_result$estimate)
 ```
+
+A Pearson correlation analysis identified a statistically significant, weak negative relationship between statistics anxiety and academic attainment, r(326)=-0.207, p<0.001, 95% CI [-0.309,-0.101]. This suggests that students reporting higher statistics anxiety tend to achieve lower grades. Converting the correlation to Cohen's d gave d=-0.424, corresponding to a small-to-moderate effect size. However, correlation does not establish causation.
 
 ## Relationship between prior mathematics study and grades
 
