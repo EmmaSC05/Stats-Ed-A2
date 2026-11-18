@@ -25,16 +25,22 @@ Teams work better when members have a common understanding of the group's goals 
 So, before starting work on the project, discuss the prompts below to share your thoughts and ideas, and reach agreement within your group. This should prevent misunderstandings in the future!
 
 -   When will the group attempt to meet (what time, how often, where, how long)?
+ FRIDAY
 
 -   When is it OK to skip a meeting?
+if you are busy
 
 -   How will we behave in meetings (for example, interrupting, or use of mobile phones)?
+WELL
 
 -   How do we communicate with each other outside of meetings? (e.g., what if you are running late to a meeting?)
+whatsapp
 
 -   How will we share files that we are working on together?
+on github
 
 -   How will we deal with problems, like chronic lateness to meetings or team members not doing their fair share of work?
+comm
 
 -   How will we celebrate when somebody has a good idea?
 
@@ -77,7 +83,37 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
+# (a)
+# Final attention amnesty
+sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
 
+# STARS attention check
+sum(smarvus_sussex$Q7.1_24 == 1, na.rm = TRUE)
+
+# STARS-M attention check
+sum(smarvus_sussex$Q8.1_21 == 5, na.rm = TRUE)
+
+# Extra four attention checks
+# sum(smarvus_sussex$Q9.1_22 == 1, na.rm = TRUE)
+# sum(smarvus_sussex$Q11.1_9 == 3, na.rm = TRUE)
+# sum(smarvus_sussex$Q13.1_17 == 2, na.rm = TRUE)
+# sum(smarvus_sussex$Q15.1_9 == 4, na.rm = TRUE)
+
+
+# (b)
+smarvus_sussex_filtered <- smarvus_sussex %>%
+  filter(
+    attention_amnesty == "Yes",
+    Q7.1_24 == 1,
+    Q8.1_21 == 5
+   # Q9.1_22 == 1,
+   # Q11.1_9 == 3,
+   # Q13.1_17 == 2,
+   # Q15.1_9 == 4
+  )
+
+# Check remaining responses
+nrow(smarvus_sussex_filtered)
 ```
 
 ## Scoring STARS
@@ -95,7 +131,25 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 (b) Produce some summary statistics for the STARS scores, and a visualisation of the distribution. (You should find that the mean STARS score in this sample is 70.189.)
 
 ```{r}
+#(a)
 
+smarvus_sussex_scored <- smarvus_sussex_filtered %>%
+  mutate(
+  stars_score = rowSums(across(Q7.1_1:Q7.1_23), na.rm= TRUE)
+  )
+
+#(b)
+summary(smarvus_sussex_scored$stars_score)
+sum(is.na(smarvus_sussex_scored$stars_score))
+mean(smarvus_sussex_scored$stars_score, na.rm = TRUE)
+
+ggplot(smarvus_sussex_scored, aes(x = stars_score)) +
+  geom_histogram(binwidth=5, colour="black", fill="lightblue")+
+  labs(
+    title = "Distribution of STARS Scores",
+    x = "STARS Score",
+    y = "Frequency"
+  )
 ```
 
 ## Grades
@@ -111,8 +165,30 @@ Clean the `grade` data, producing a true numerical value for each student where 
 Just as you did for the STARS scores, produce some summary statistics and a visualisation of the grade distribution.
 
 ```{r}
+smarvus_sussex_scored1 <- smarvus_sussex_scored %>%
+  mutate(
+    grade = parse_number(grade)
+  )
+
+head(smarvus_sussex_scored1$grade)
+
+summary(smarvus_sussex_scored1$grade, na.rm=TRUE)
+sd(smarvus_sussex_scored1$grade, na.rm=TRUE)
+sum(is.na(smarvus_sussex_scored1$grade))
+
+
+ggplot(smarvus_sussex_scored1, aes(x = grade)) +
+  geom_histogram(binwidth=5, colour="black", fill="lightblue")+
+  labs(
+    title = "Distribution of Statistics Grades",
+    x = "Grade (%)",
+    y = "Frequency"
+  )
 
 ```
+
+he distribution of statistics grades is negatively skewed, with one distinct peak, with most students achieving grades between approximately 60% and 80%. The mean grade was 68.21% (SD = 12.09), slightly below the median of 70%, consistent with the negative skew. There are also a few unusually low grades, which may influence the mean.
+
 
 ## Relationship between anxiety and grades
 
@@ -127,8 +203,29 @@ You should now be in a position to make a first attempt at addressing the overal
 (c) Use `effectsize::r_to_d` (as demonstrated in the week 8 lecture) to express the correlation as a Cohen's d effect size.
 
 ```{r}
+ggplot(smarvus_sussex_scored1, aes(x = stars_score, y = grade))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE, colour = "red")+
+  labs(
+    title = "Relationship between Statistics Anxiety and Grades",
+    x = "STARS Score",
+    y = "Grade (%)"
+  )
 
+# Pearson correlation between STARS scores and grades
+cor_result <- cor.test(
+  smarvus_sussex_scored1$stars_score,
+  smarvus_sussex_scored1$grade
+)
+
+cor_result
+
+
+# Convert Pearson's r to Cohen's d
+effectsize::r_to_d(cor_result$estimate)
 ```
+
+A Pearson correlation analysis identified a statistically significant, weak negative relationship between statistics anxiety and academic attainment, r(326)=-0.207, p<0.001, 95% CI [-0.309,-0.101]. This suggests that students reporting higher statistics anxiety tend to achieve lower grades. Converting the correlation to Cohen's d gave d=-0.424, corresponding to a small-to-moderate effect size. However, correlation does not establish causation.
 
 ## Relationship between prior mathematics study and grades
 
@@ -143,8 +240,39 @@ Purely for the purposes of practicing computing a Cohen's d effect size, we will
 (b) Focus on the GCSE and A-Level groups. Compare the mean performance (`grade`) of the students in these two groups: produce a visualisation, and compute the standardised mean difference (Cohen's d). How does this compare to the d from Task 4?
 
 ```{r}
+# (a)
+smarvus_sussex_scored1 %>%
+  count(math_edu_level, sort = TRUE)
+
+# (b)
+smarvus_groups <- smarvus_sussex_scored1 %>%
+  filter(math_edu_level %in% c("GCSE", "A Level"))
+
+smarvus_groups %>%
+  group_by(math_edu_level) %>%
+  summarise(
+    n = sum(!is.na(grade)),
+    mean_grade = mean(grade, na.rm=TRUE),
+    sd_grade = sd(grade, na.rm =TRUE)
+  )
+
+ggplot(smarvus_groups, aes(x = math_edu_level, y = grade))+
+  geom_boxplot(fill = "lightblue") +
+  labs(
+    title = "Statistics Grades by Mathematics Education Level",
+    x = "Mathematics Education Level",
+    y = "Grade (%)"
+  )
+
+effectsize::cohens_d(
+  grade ~ math_edu_level,
+  data = smarvus_groups
+)
 
 ```
+A comparison of statistics grades between students with GCSE and A Level mathematics qualifications produced a Cohen's d of 0.35 (95% CI [0.08, 0.62]), indicating a small difference in mean grades. This effect was slightly smaller than the converted effect size obtained for the relationship between statistics anxiety and attainment in Task 4 (|d|=0.424). Both results suggest relatively modest associations with academic performance.
+
+
 
 ## Relationship between anxiety measures
 
@@ -161,8 +289,37 @@ One of the goals of the SMARVUS project was to investigate the relationship betw
 Compute the participants' scores for at least one of the other measures (or all three if you like), and investigate the correlation with STARS.
 
 ```{r}
+# Calculate STARS-M scores
+smarvus_sussex_scored1 <- smarvus_sussex_scored1 %>%
+  mutate(
+    stars_m_score = rowSums(
+      across(c(Q8.1_1:Q8.1_20,
+               Q7.1_9, Q7.1_12, Q7.1_17)),
+      na.rm = TRUE))
 
+# Summary statistics
+summary(smarvus_sussex_scored1$stars_m_score)
+
+# Relationship between STARS and STARS-M
+ggplot(smarvus_sussex_scored1,
+       aes(x = stars_score, y = stars_m_score)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, colour = "red") +
+  labs(
+    title = "Relationship between Statistics and Mathematics Anxiety",
+    x = "STARS Score",
+    y = "STARS-M Score"
+  )
+
+# Pearson correlation
+cor_result_m <- cor.test(
+  smarvus_sussex_scored1$stars_score,
+  smarvus_sussex_scored1$stars_m_score
+)
+
+cor_result_m
 ```
+A Pearson correlation analysis identified a very strong, statistically significant positive relationship between statistics anxiety (STARS) and mathematics anxiety (STARS-M), r(373)=0.892, p<0.001, 95% CI [0.869,0.911]. The scatterplot demonstrated a strong, approximately linear positive relationship, suggesting that students with higher statistics anxiety tend to experience higher mathematics anxiety. This relationship was substantially stronger than the negative correlation between statistics anxiety and attainment identified in Task 4 (r=-0.207). However, the shared questionnaire items may partly contribute to this association.
 
 ## Going further with the data
 
