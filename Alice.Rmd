@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(ggplot2)
 
 # set the default plot style
 theme_set(theme_minimal())
@@ -74,7 +75,7 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (a) Write your own code to find the number of students passing each check, and compare your results with the numbers given above.
 
 ```{r}
-smarvus_sussex
+
 sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
 sum(smarvus_sussex$Q7.1_24 == "1", na.rm = TRUE)
 sum(smarvus_sussex$Q8.1_21 == "5", na.rm = TRUE)
@@ -85,7 +86,14 @@ sum(smarvus_sussex$Q8.1_21 == "5", na.rm = TRUE)
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
+smarvus_sussex_filtered <- smarvus_sussex %>%
+  filter(
+    attention_amnesty == "Yes",
+    Q7.1_24 == 1,
+    Q8.1_21 == 5
+  )
 
+nrow(smarvus_sussex_filtered)
 ```
 
 ## Scoring STARS
@@ -103,6 +111,11 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 (b) Produce some summary statistics for the STARS scores, and a visualisation of the distribution. (You should find that the mean STARS score in this sample is 70.189.)
 
 ```{r}
+smarvus_sussex_scored <- smarvus_sussex_filtered%>%
+  mutate(star_score = rowSums(across(Q7.1_1:Q7.1_23), na.rm = TRUE))
+
+summary(smarvus_sussex_scored$star_score)
+hist(smarvus_sussex_scored$star_score)
 
 ```
 
@@ -118,7 +131,35 @@ Clean the `grade` data, producing a true numerical value for each student where 
 
 Just as you did for the STARS scores, produce some summary statistics and a visualisation of the grade distribution.
 
+Since only working with Sussex currently which is 0-100 and just use raw score.
+
 ```{r}
+
+smarvus_sussex_scored_clean <- smarvus_sussex_scored %>%
+  mutate(grade = parse_number(grade)) #Gives a ckean number
+
+head(smarvus_sussex_scored_clean$grade) #Check are now numbers
+
+class(smarvus_sussex_scored_clean$grade) #Check is numeric
+
+sum(is.na(smarvus_sussex_scored_clean$grade)) #How many are missing
+
+summary(smarvus_sussex_scored_clean$grade)
+sd(smarvus_sussex_scored_clean$grade, na.rm = TRUE)
+
+
+ggplot(smarvus_sussex_scored_clean, aes(x = grade)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", colour = "black") +
+  labs(
+    title = "Distribution of Statistics Module Grades",
+    x = "Grade (%)",
+    y = "Number of Students"
+  ) +
+  theme_minimal()
+
+# Check range falls within 0-100.
+
+range(smarvus_sussex_scored_clean$grade, na.rm = TRUE)
 
 ```
 
@@ -136,6 +177,33 @@ You should now be in a position to make a first attempt at addressing the overal
 
 ```{r}
 
+ggplot(smarvus_sussex_scored_clean, aes(x = star_score, y = grade)) +
+  geom_point() +
+  labs(
+    title = "Relationship between Statistics Anxiety and Grades",
+    x = "STARS Score",
+    y = "Statistics Grade (%)"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+
+cor_result <- cor.test(
+  ~ star_score + grade,
+  data = smarvus_sussex_scored_clean,
+  na.action = na.omit
+)
+
+cor_result
+```
+The correlation is negative suggesting a negative correlation between stats anxiety and stats score. 0.2 isnt a strong score (close to 1), therefore it is a weak corrrelation.
+
+```{r}
+effectsize::r_to_d(r = cor_result$estimate)
+effectsize::r_to_d(r = cor_result$conf.int[1:2])
+
 ```
 
 ## Relationship between prior mathematics study and grades
@@ -151,7 +219,33 @@ Purely for the purposes of practicing computing a Cohen's d effect size, we will
 (b) Focus on the GCSE and A-Level groups. Compare the mean performance (`grade`) of the students in these two groups: produce a visualisation, and compute the standardised mean difference (Cohen's d). How does this compare to the d from Task 4?
 
 ```{r}
+smarvus_sussex_scored_clean %>%
+  count(math_edu_level, sort = TRUE)
 
+smarvus_sussex_scored_clean %>%
+  count(math_edu_level) %>%
+  mutate(percentage = n / sum(n) * 100) %>%
+  arrange(desc(n))
+
+sum(is.na(smarvus_sussex_scored_clean$math_edu_level))
+
+```
+
+```{r}
+smarvus_sussex_math <- smarvus_sussex_scored_clean %>%
+  filter(math_edu_level %in% c("GCSE", "A Level"),
+         !is.na(grade))
+
+ggplot(smarvus_sussex_math, 
+       aes(x = math_edu_level, y = grade)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.15, alpha = 0.3) +
+  labs(
+    title = "Statistics Grades by Previous Mathematics Education",
+    x = "Highest Level of Mathematics Education",
+    y = "Statistics Grade (%)"
+  ) +
+  theme_minimal()
 ```
 
 ## Relationship between anxiety measures
@@ -167,6 +261,24 @@ One of the goals of the SMARVUS project was to investigate the relationship betw
 ### 📝 Task 6
 
 Compute the participants' scores for at least one of the other measures (or all three if you like), and investigate the correlation with STARS.
+
+Looking at R-MARS
+```{r}
+smarvus_sussex_scored_clean <- smarvus_sussex_scored_clean %>%
+  mutate(r_mars_score = rowSums(across(Q8.2_1:Q8.2_20), na.rm = TRUE))
+
+summary(smarvus_sussex_scored_clean$r_mars_score)
+
+smarvus_sussex_scored_clean %>%
+  summarise(across(Q8.2_1:Q8.2_20, ~sum(is.na(.x)))) # 2 missing responses
+
+cor.test(
+  ~ star_score + r_mars_score,
+  data = smarvus_sussex_scored_clean,
+  na.action = na.omit
+)
+
+```
 
 ```{r}
 
