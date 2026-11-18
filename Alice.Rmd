@@ -322,3 +322,20 @@ In particular:
 ### Possible analyses
 
 Write down at least 3 plausible analyses that you could use to address the research question. Discuss the pros and cons of each within your group.
+
+Ideas:
+
+- Standardise grades (do percentage out of maximum)
+- compute z-scores (standardized scores) for attainment within each specific university or country. centers the mean grade at 0 with a standard deviation of 1 for each cohort
+
+Demographic Variables: 
+- Gender
+- Country and University/Institution
+- Degree Program / Major
+- Prior Mathematics/Statistics Experience
+
+Alternative Measures:
+- R-MARS-S (Revised Mathematics Anxiety Rating Scale - Statistics version)
+- Mathematics Anxiety Measures, math anxiety as a control variable to determine if statistics anxiety has a unique effect on attainment
+- Attitudes and Self-Efficacy
+
