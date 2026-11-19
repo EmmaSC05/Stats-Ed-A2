@@ -25,6 +25,17 @@ if (!file.exists(data_file)) {
 }
 ```
 
+```{r, data cleaning - emma c}
+# Number of participants and variables
+dim(smarvus_raw)
+
+# Check duplicate rows
+sum(duplicated(smarvus_raw))
+
+# Check total missing values
+sum(is.na(smarvus_raw))
+```
+
 
 ## Effect size summary
 
