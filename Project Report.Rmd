@@ -5,9 +5,6 @@ date: "2026-11-19"
 output: pdf_document
 ---
 
-
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -27,6 +24,11 @@ if (!file.exists(data_file)) {
   smarvus_raw <- read_csv(data_file)
 }
 ```
+
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
+RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
+STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7.1_23
+STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
 
 
 ```{r data cleaning - emma c, echo=FALSE}
@@ -49,21 +51,44 @@ data_summary
 # missing values for each variable
 
 missing_summary <- smarvus_raw %>%
-  summarise(across(everything(), ~sum(is.na(.))
-                   )) %>%
+  summarise(across(
+    everything(),
+    ~sum(is.na(.))
+  )) %>%
   pivot_longer(
     everything(),
     names_to = "Variable",
-    values_to = "Missing") %>%
-  arrange(desc(Missing))
+    values_to = "Missing"
+  ) %>%
+  mutate(
+    Percent_Missing =
+      round(100 * Missing / nrow(smarvus_raw), 1)
+  ) %>%
+  arrange(desc(Percent_Missing))
 
-head(missing_summary, 15)
+print(missing_summary, n = 30)
+
 
 ```
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
-RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE), Q7.1_1 to Q7.1_23
-STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
+
+```{r}
+# Examine grading systems and available grades
+smarvus_raw %>%
+  select(
+    country,
+    university,
+    stats_edu_grade_1_edited,
+    stats_edu_grade_data_type
+  ) %>%
+  slice_head(n = 10)
+
+smarvus_raw %>%
+  count(country, stats_edu_grade_data_type) %>%
+  arrange(country, desc(n)) %>%
+  print(n = 100)
+```
+
+
 
 ```{r attainment-inspection}
 # Check how grades are recorded
