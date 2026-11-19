@@ -81,13 +81,41 @@ smarvus_raw %>%
     stats_edu_grade_data_type
   ) %>%
   slice_head(n = 10)
+```
 
+```{r}
 smarvus_raw %>%
   count(country, stats_edu_grade_data_type) %>%
   arrange(country, desc(n)) %>%
   print(n = 100)
 ```
 
+```{r}
+smarvus_raw %>%
+  count(stats_edu_grade_data_type)
+
+smarvus_raw %>%
+  count(grade_category_notes, sort = TRUE) %>%
+  print(n = Inf)
+
+```
+```{r}
+smarvus_raw %>%
+  summarise(
+    Total = n(),
+    With_grade = sum(
+      !is.na(stats_edu_grade) &
+      stats_edu_grade != "Not Administered"
+    )
+  )
+
+smarvus_raw %>%
+  filter(
+    !is.na(stats_edu_grade),
+    stats_edu_grade != "Not Administered"
+  ) %>%
+  count(stats_edu_grade_data_type)
+```
 
 
 
