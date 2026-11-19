@@ -83,7 +83,10 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 sum(smarvus_sussex$attention_amnesty == "Yes", na.rm = TRUE)
 sum(smarvus_sussex$Q7.1_24 == 1, na.rm = TRUE)
 sum(smarvus_sussex$Q8.1_21 == 5, na.rm = TRUE)
-
+sum(smarvus_sussex$Q9.1_22 == 1, na.rm = TRUE)
+sum(smarvus_sussex$Q11.1_9 == 3, na.rm = TRUE)
+sum(smarvus_sussex$Q13.1_17 == 2, na.rm = TRUE)
+sum(smarvus_sussex$Q15.1_9 == 4, na.rm = TRUE)
 
 ```
 
@@ -94,7 +97,11 @@ smarvus_sussex_filtered <- smarvus_sussex %>%
   filter(
     attention_amnesty == "Yes",
     Q7.1_24 == 1,
-    Q8.1_21 == 5
+    Q8.1_21 == 5,
+    Q9.1_22 == 1,
+    Q11.1_9 == 3,
+    Q13.1_17 == 2,
+    Q15.1_9 == 4
   )
 
 nrow(smarvus_sussex_filtered)
@@ -113,10 +120,9 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 (a) Create a new copy of the filtered dataset called `smarvus_sussex_scored`, which adds a `stars_score` column containing the total score on STARS for each participant.
 
 ```{r}
-smarvus_sussex_scored <- smarvus_sussex_filtered%>%
-  mutate(total = rowSums(across(c(Q7.1_1, Q7.1_23))))
+smarvus_sussex_scored <- smarvus_sussex_filtered
 
-smarvus_sussex_scored
+
 ```
 
 (b) Produce some summary statistics for the STARS scores, and a visualisation of the distribution. (You should find that the mean STARS score in this sample is 70.189.)

@@ -41,7 +41,7 @@ Git
 Communication
 
 -   How will we celebrate when somebody has a good idea?
-Yay thats
+Yay thats good!
 
 # SMARVUS dataset
 
@@ -82,26 +82,6 @@ Those numbers are for the full dataset. For the Sussex subset, you should find t
 (b) Produce a filtered dataset `smarvus_sussex_filtered` with only responses that passed ALL attention checks. It should contain 375 responses.
 
 ```{r}
-# Task 1(a): Count students passing each attention check
-
-smarvus_sussex %>%
-  summarise(
-    amnesty = sum(attention_amnesty == "Yes", na.rm = TRUE),
-    stars = sum(Q7.1_24 == 1, na.rm = TRUE),
-    stars_m = sum(Q8.1_21 == 5, na.rm = TRUE)
-  )
-
-# Task 1(b): Filter students who passed all three checks
-
-smarvus_sussex_filtered <- smarvus_sussex %>%
-  filter(
-    attention_amnesty == "Yes",
-    Q7.1_24 == 1,
-    Q8.1_21 == 5
-  )
-
-# Check number of remaining students
-nrow(smarvus_sussex_filtered)
 
 ```
 
@@ -121,39 +101,6 @@ The overall score for STARS comes from adding up the 23 responses, so scores sho
 
 ```{r}
 
-# Task 2(a): Calculate STARS scores
-
-smarvus_sussex_scored <- smarvus_sussex_filtered %>%
-  mutate(
-    stars_score = rowSums(
-      select(., Q7.1_1:Q7.1_23),
-      na.rm = TRUE
-    )
-  )
-
-# Task 2(b): Summary statistics
-
-smarvus_sussex_scored %>%
-  summarise(
-    n = sum(!is.na(stars_score)),
-    mean = mean(stars_score),
-    median = median(stars_score),
-    sd = sd(stars_score),
-    min = min(stars_score),
-    max = max(stars_score)
-  )
-
-# Visualise STARS score distribution
-
-ggplot(smarvus_sussex_scored, aes(x = stars_score)) +
-  geom_histogram(binwidth = 5, fill = "steelblue",
-                 colour = "white") +
-  labs(
-    title = "Distribution of Statistics Anxiety Scores",
-    x = "STARS Score",
-    y = "Number of Students"
-  )
-
 ```
 
 ## Grades
@@ -169,37 +116,6 @@ Clean the `grade` data, producing a true numerical value for each student where 
 Just as you did for the STARS scores, produce some summary statistics and a visualisation of the grade distribution.
 
 ```{r}
-# Task 3: Clean grade data
-
-smarvus_sussex_scored <- smarvus_sussex_scored %>%
-  mutate(
-    grade_numeric = readr::parse_number(grade)
-  )
-
-# Summary statistics
-smarvus_sussex_scored %>%
-  summarise(
-    n = sum(!is.na(grade_numeric)),
-    mean = mean(grade_numeric, na.rm = TRUE),
-    median = median(grade_numeric, na.rm = TRUE),
-    sd = sd(grade_numeric, na.rm = TRUE),
-    min = min(grade_numeric, na.rm = TRUE),
-    max = max(grade_numeric, na.rm = TRUE)
-  )
-
-# Visualise grade distribution
-ggplot(smarvus_sussex_scored, aes(x = grade_numeric)) +
-  geom_histogram(
-    binwidth = 5,
-    fill = "steelblue",
-    colour = "white"
-  ) +
-  labs(
-    title = "Distribution of Statistics Module Grades",
-    x = "Grade (%)",
-    y = "Number of Students"
-  )
-
 
 ```
 
@@ -217,40 +133,7 @@ You should now be in a position to make a first attempt at addressing the overal
 
 ```{r}
 
-# Task 4(a): Scatterplot
-
-ggplot(smarvus_sussex_scored,
-       aes(x = stars_score, y = grade_numeric)) +
-  geom_point(alpha = 0.5, colour = "steelblue") +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(
-    title = "Relationship Between Statistics Anxiety and Grades",
-    x = "STARS Score",
-    y = "Grade (%)"
-  )
-
-# Task 4(b): Pearson correlation
-
-cor_result <- cor.test(
-  smarvus_sussex_scored$stars_score,
-  smarvus_sussex_scored$grade_numeric,
-  use = "complete.obs"
-)
-
-cor_result
-
-# Task 4(c): Convert correlation to Cohen's d
-
-library(effectsize)
-
-effectsize::r_to_d(
-  unname(cor_result$estimate)
-)
-
 ```
-(b) There was a statistically significant weak negative correlation between statistics anxiety and grades (r = −0.207, p < 0.001, 95% CI [−0.309, −0.101]). This suggests that students reporting greater statistics anxiety tended to achieve slightly lower grades. The corresponding Cohen's d of −0.424 indicates a small-to-moderate effect. However, this association does not establish a causal relationship.
-
-
 
 ## Relationship between prior mathematics study and grades
 
@@ -266,53 +149,7 @@ Purely for the purposes of practicing computing a Cohen's d effect size, we will
 
 ```{r}
 
-# Task 5(a): Summary of mathematics education levels
-
-smarvus_sussex_scored %>%
-  count(math_edu_level, sort = TRUE)
-
-# Inspect exact category names
-unique(smarvus_sussex_scored$math_edu_level)
-
-# Task 5(b) — Comparing GCSE and A-Level students
-
-# Select GCSE and A-Level students with available grades
-math_groups <- smarvus_sussex_scored %>%
-  filter(
-    math_edu_level %in% c("GCSE", "A Level"),
-    !is.na(grade_numeric)
-  )
-
-# Compare average grades
-math_groups %>%
-  group_by(math_edu_level) %>%
-  summarise(
-    n = n(),
-    mean_grade = mean(grade_numeric),
-    sd_grade = sd(grade_numeric)
-  )
-
-# Visualise grade distributions
-ggplot(math_groups,
-       aes(x = math_edu_level, y = grade_numeric,
-           fill = math_edu_level)) +
-  geom_boxplot(alpha = 0.7) +
-  labs(
-    title = "Statistics Grades by Prior Mathematics Education",
-    x = "Highest Mathematics Education",
-    y = "Grade (%)"
-  ) +
-  guides(fill = "none")
-
-# Calculate Cohen's d
-effectsize::cohens_d(
-  grade_numeric ~ math_edu_level,
-  data = math_groups
-)
-
 ```
-(b) Students with A-Level mathematics achieved a higher mean grade (71.03%) than students with GCSE mathematics (66.82%), a difference of approximately 4.20 percentage points. Cohen's d was approximately 0.35, suggesting a small-to-moderate difference in performance. This was slightly smaller in absolute magnitude than the effect size obtained for statistics anxiety in Task 4 (|d| = 0.424). However, neither relationship establishes causation.
-
 
 ## Relationship between anxiety measures
 
@@ -329,44 +166,8 @@ One of the goals of the SMARVUS project was to investigate the relationship betw
 Compute the participants' scores for at least one of the other measures (or all three if you like), and investigate the correlation with STARS.
 
 ```{r}
-# Task 6: Calculate STARS-M scores
-
-smarvus_sussex_scored <- smarvus_sussex_scored %>%
-  mutate(
-    stars_m_score = rowSums(
-      select(., Q7.2_1:Q7.2_23),
-      na.rm = FALSE
-    )
-  )
-
-# Summary statistics
-smarvus_sussex_scored %>%
-  summarise(
-    n = sum(!is.na(stars_m_score)),
-    mean = mean(stars_m_score, na.rm = TRUE),
-    sd = sd(stars_m_score, na.rm = TRUE)
-  )
-
-# Scatterplot
-ggplot(smarvus_sussex_scored,
-       aes(x = stars_score, y = stars_m_score)) +
-  geom_point(alpha = 0.5, colour = "steelblue") +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(
-    title = "Relationship Between Statistics and Mathematics Anxiety",
-    x = "STARS Score (Statistics Anxiety)",
-    y = "STARS-M Score (Mathematics Anxiety)"
-  )
-
-# Pearson correlation
-cor.test(
-  smarvus_sussex_scored$stars_score,
-  smarvus_sussex_scored$stars_m_score,
-  use = "complete.obs"
-)
 
 ```
-There was a strong positive correlation between statistics anxiety (STARS) and mathematics anxiety (STARS-M), r = 0.857, p < 0.001, 95% CI [0.828, 0.882]. This suggests that students experiencing greater statistics anxiety also tend to experience greater mathematics anxiety. However, the measures are not identical, and their correlation may be partly influenced by shared questionnaire items.
 
 ## Going further with the data
 
@@ -392,13 +193,6 @@ smarvus_raw <- read_csv("smarvus_complete_050524.csv")
 ```
 
 How will you address the diversity of grading scales in your analysis?
-We would standardise grades to make them comparable across universities. For numerical scales, we could convert grades to percentages, reversing scales where lower numbers represent better performance.
-
-For letter grades, we could use the corresponding numerical ranges provided in the dataset.
-
-However, percentages may still not be directly comparable because universities have different marking standards. An alternative would be to standardise grades within each university using z-scores, representing performance relative to other students at that institution.
-
-Our preferred approach: Use within-university standardised grades, while considering the effect of university in our analysis.
 
 ### Other variables
 
@@ -408,46 +202,8 @@ In particular:
 
 -   **Section 2.4** describes the approach to the student survey, and gives some details about the demographic part of the survey. Are there any variables here that you think would be important for your analysis?
 
-The paper identifies several potentially relevant variables, including students' educational backgrounds, demographics and course details. 
-Google Cloud Storage
-
-
-Important variables to consider:
-- Prior mathematics education: Students with stronger mathematical backgrounds may achieve higher grades and experience less anxiety.
-- Age and gender: Anxiety levels and academic performance may differ across demographic groups.
-- Year of study: More experienced students may have developed greater confidence in statistics.
-- Degree subject: Students studying mathematics-based subjects may have different experiences of statistics anxiety.
-- University and course characteristics: Differences in teaching and assessment could influence attainment.
-These variables could be included in a regression model to investigate whether the association between statistics anxiety and attainment remains after accounting for other factors.
-
-
 -   **Section 2.5** describes the various measures included in the survey. So far we have mainly looked at STARS, but maybe there are other relevant measures to consider for your analysis. In particular, R-MARS-S gives another way of measuring statistics anxiety.
-
-The paper includes several measures that could help us understand the relationship between statistics anxiety and attainment. 
-eprints.bournemouth.ac.uk
-
-Measure	Potential relevance
-STARS	Measures statistics anxiety
-R-MARS-S	Alternative measure of statistics anxiety
-STARS-M	Measures mathematics anxiety
-Test anxiety	Helps distinguish statistics-specific anxiety from general examination anxiety
-Self-efficacy	Measures students' confidence in their ability to succeed
-Persistence	May help explain differences in academic performance
-
-R-MARS-S is particularly interesting because we could investigate whether the negative relationship between statistics anxiety and grades is consistent across two different anxiety measures.
-
-Our Task 6 results also showed a strong correlation between STARS and STARS-M (r = 0.857), suggesting substantial overlap between statistics anxiety and mathematics anxiety.
 
 ### Possible analyses
 
 Write down at least 3 plausible analyses that you could use to address the research question. Discuss the pros and cons of each within your group.
-
-
-Analysis	Advantages	Limitations
-1. Pearson correlation: STARS scores against grades	Simple, easy to interpret and directly addresses the research question	Cannot account for other influencing variables or establish causation
-
-2. Multiple linear regression: Grades predicted by STARS, prior mathematics education, age and other relevant variables	Allows us to examine the association between anxiety and grades while adjusting for other factors	More complex, requires checking assumptions and handling missing data
-
-3. Compare STARS and R-MARS-S: Examine the relationship between each anxiety measure and attainment	Tests whether the findings are consistent across different measures of statistics anxiety	The measures may be strongly correlated, making it difficult to distinguish their individual contributions
-
-
