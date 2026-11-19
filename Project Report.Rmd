@@ -10,13 +10,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 ```
-```{r download packages, eval=FALSE}
-# to download the full 68MB dataset, you can use:
-smarvus_raw <- read_csv("https://osf.io/download/a4zmv/")
 
-# To avoid downloading the file many times, save a copy as smarvus_complete_050524.csv and load that in future:
-smarvus_raw %>% write_csv("smarvus_complete_050524.csv")
-smarvus_raw <- read_csv("smarvus_complete_050524.csv")
+
+```{r load-data, message=FALSE, warning=FALSE}
+# Load the SMARVUS dataset
+data_file <- "smarvus_complete_050524.csv"
+
+# Download dataset only if it is not already saved
+if (!file.exists(data_file)) {
+  smarvus_raw <- read_csv("https://osf.io/download/a4zmv/")
+  write_csv(smarvus_raw, data_file)
+} else {
+  smarvus_raw <- read_csv(data_file)
+}
 ```
 
 
