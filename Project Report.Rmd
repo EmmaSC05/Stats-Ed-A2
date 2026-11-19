@@ -53,10 +53,10 @@ missing_summary <- smarvus_raw %>%
 head(missing_summary, 15)
 
 ```
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE)
-RMARS-S is like RMARS but replaces the maths with stats
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE)
-STARS-M is a modified version of STARS but replaces the stats with maths
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
+RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
+STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE), Q7.1_1 to Q7.1_23
+STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
 
 
 
