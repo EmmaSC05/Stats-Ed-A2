@@ -25,7 +25,7 @@ if (!file.exists(data_file)) {
 }
 ```
 
-```{r, data cleaning - emma c}
+```{r, data cleaning - emma c, echo=FALSE}
 # Number of participants and variables
 dim(smarvus_raw)
 
@@ -36,6 +36,25 @@ sum(duplicated(smarvus_raw))
 sum(is.na(smarvus_raw))
 ```
 
+
+
+```{r, missing data, echo=FALSE}
+
+# missing values for each variable
+
+missing_summary <- smarvus_raw %>%
+  summarise(across(everything(), ~sum(is.na(.))
+                   )) %>%
+  pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Missing") %>%
+  arrange(desc(Missing))
+
+head(missing_summary, 15)
+
+
+```
 
 ## Effect size summary
 
