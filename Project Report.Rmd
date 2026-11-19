@@ -55,6 +55,10 @@ head(missing_summary, 15)
 
 
 ```
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE)
+RMARS-S is like RMARS but replaces the maths with stats
+STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE)
+STARS-M is a modified version of STARS but replaces the stats with maths
 
 ## Effect size summary
 
