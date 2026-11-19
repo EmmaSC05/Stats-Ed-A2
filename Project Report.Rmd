@@ -25,20 +25,22 @@ if (!file.exists(data_file)) {
 }
 ```
 
-```{r, data cleaning - emma c, echo=FALSE}
-# Number of participants and variables
-dim(smarvus_raw)
+```{r data cleaning - emma c, echo=FALSE}
 
-# Check duplicate rows
-sum(duplicated(smarvus_raw))
+# initial data inspection
+data_summary <- tibble(
+  Observations = nrow(smarvus_raw),
+  Variables = ncol(smarvus_raw),
+  Duplicate_rows = sum(duplicated(smarvus_raw)),
+  Missing_values = sum(is.na(smarvus_raw))
+)
 
-# Check total missing values
-sum(is.na(smarvus_raw))
+data_summary
 ```
 
 
 
-```{r, missing data echo=FALSE}
+```{r missing data, echo=FALSE}
 # missing values for each variable
 
 missing_summary <- smarvus_raw %>%
