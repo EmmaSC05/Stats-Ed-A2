@@ -28,6 +28,11 @@ if (!file.exists(data_file)) {
 }
 ```
 
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
+RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
+STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7.1_23
+STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
+
 
 ```{r data cleaning - emma c, echo=FALSE}
 
@@ -68,21 +73,25 @@ print(missing_summary, n = 30)
 
 
 ```
-<<<<<<< HEAD
+
+```{r}
+# Examine grading systems and available grades
+smarvus_raw %>%
+  select(
+    country,
+    university,
+    stats_edu_grade_1_edited,
+    stats_edu_grade_data_type
+  ) %>%
+  slice_head(n = 10)
+
+smarvus_raw %>%
+  count(country, stats_edu_grade_data_type) %>%
+  arrange(country, desc(n)) %>%
+  print(n = 100)
+```
 
 
-
-
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE)
-RMARS-S is like RMARS but replaces the maths with stats
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE)
-STARS-M is a modified version of STARS but replaces the stats with maths
-=======
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
-RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE), Q7.1_1 to Q7.1_23
-STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
->>>>>>> b8d989079ca718ffe7931638e541c02dccce209f
 
 
 
