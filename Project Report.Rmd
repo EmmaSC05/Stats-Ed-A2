@@ -1,6 +1,6 @@
 ---
 title: "Statistics Anxiety and Academic Attainment"
-author: "Emma Crawford, Alice Miller, Leah Cookson, Alex Anderson"
+author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
 output: pdf_document
 ---
@@ -28,7 +28,7 @@ if (!file.exists(data_file)) {
 }
 ```
 
-```{r, data cleaning - emma c, echo=FALSE}
+```{r, data cleaning, echo=FALSE}
 # Number of participants and variables
 dim(smarvus_raw)
 
