@@ -65,7 +65,26 @@ RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
 STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE), Q7.1_1 to Q7.1_23
 STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
 
+```{r attainment-inspection}
+# Check how grades are recorded
+smarvus_raw %>%
+  count(grade, sort = TRUE) %>%
+  head(40)
 
+# Create a dataset of participants with recorded grades
+smarvus_grades <- smarvus_raw %>%
+  filter(!is.na(grade),
+         grade != "Not Available")
+
+# Check sample size
+nrow(smarvus_grades)
+
+# Examine the grading systems
+smarvus_grades %>%
+  select(country, survey_id, grade,
+         grade_low, grade_high, grade_category_notes) %>%
+  head(20)
+```
 
 ## Effect size summary
 
