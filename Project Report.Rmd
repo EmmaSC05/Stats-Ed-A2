@@ -1,10 +1,13 @@
 ---
-title: "Project Report"
+title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alex Anderson"
-output: html_document
 date: "2026-11-19"
-
+output: pdf_document
 ---
+
+
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
