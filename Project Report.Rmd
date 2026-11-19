@@ -38,8 +38,7 @@ sum(is.na(smarvus_raw))
 
 
 
-```{r, missing data, echo=FALSE}
-
+```{r, missing data echo=FALSE}
 # missing values for each variable
 
 missing_summary <- smarvus_raw %>%
@@ -53,12 +52,13 @@ missing_summary <- smarvus_raw %>%
 
 head(missing_summary, 15)
 
-
 ```
 RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE)
 RMARS-S is like RMARS but replaces the maths with stats
 STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE)
 STARS-M is a modified version of STARS but replaces the stats with maths
+
+
 
 ## Effect size summary
 
@@ -68,18 +68,7 @@ d = A, 95% CI [B, C] based on N = D.
 
 where A, B, C are replaced with the values that you have found using data from D participants.
 
-
-```{r cars}
-summary(cars)
-```
-
 ## Summary of the analysis approach
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
