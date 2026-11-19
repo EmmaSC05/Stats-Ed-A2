@@ -6,6 +6,8 @@ date: "2026-11-19"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
 ```
 
 ## Effect size summary
