@@ -5,12 +5,20 @@ output: html_document
 date: "2026-11-19"
 
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 ```
+```{r download packages, eval=FALSE}
+# to download the full 68MB dataset, you can use:
+smarvus_raw <- read_csv("https://osf.io/download/a4zmv/")
+
+# To avoid downloading the file many times, save a copy as smarvus_complete_050524.csv and load that in future:
+smarvus_raw %>% write_csv("smarvus_complete_050524.csv")
+smarvus_raw <- read_csv("smarvus_complete_050524.csv")
+```
+
 
 ## Effect size summary
 
