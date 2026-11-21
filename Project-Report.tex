@@ -1,0 +1,238 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+% fallback for those not using the hyperref driver hyperxmp:
+\makeatletter
+\@ifundefined{xmpquote}{\newcommand{\xmpquote}[1]{#1}}{}
+\makeatother
+\hypersetup{
+  pdftitle={Statistics Anxiety and Academic Attainment},
+  pdfauthor={Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Statistics Anxiety and Academic Attainment}
+\author{Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson}
+\date{2026-11-19}
+
+\begin{document}
+\maketitle
+
+\subsection{Effect Size Summary}\label{effect-size-summary}
+
+\emph{to be completed using our final analysis:}
+
+\(d = A, \ 95\%\ \mathrm{CI}\ [B,C]\), based on \(N = D\).
+
+\subsection{Summary of the Analysis
+Approach}\label{summary-of-the-analysis-approach}
+
+\emph{to be completed together after choosing the primary analysis (max
+100 words)}
+
+\subsection{Details of the Analysis}\label{details-of-the-analysis}
+
+\subsubsection{Data Preparation and Participant
+Exclusions}\label{data-preparation-and-participant-exclusions}
+
+\paragraph{Initial Inspection and Grade
+Availability}\label{initial-inspection-and-grade-availability}
+
+The SMARVUS dataset contained 12,570 observations and 788 variables. We
+checked for identical rows and missing or duplicated participant
+identifiers (`unique\_id'); none were found. Missing reponses were
+investigated with reference to the variables required for this analysis
+rather than excluding participants with missing entries in other places
+of the questionnaire. Statistics attainment was recorded in `grade',
+with 1820 participants having a grade entry other than `NA' or `\,``Not
+Available''\,'.
+
+\paragraph{Standarising Attainment Across
+Institutions}\label{standarising-attainment-across-institutions}
+
+Reported grades were recorded differently across the participating
+surveys. This included different numerical scales, letter grades and
+ordinal categories. We examined each institutions lowest and highest
+documented grades before we contrusted a comparable attainment variable.
+Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly
+rescaled to a common 0--100 range:
+
+\[
+\text{Scaled grade} = 100\,\frac{\text{Observed grade} - \text{Lowest possible grade}}{\text{Highest possible grade} - \text{Lowest possible grade}}.
+\]
+
+To keep observations that used letter grades, we usedthe midpoint of the
+applicable institution-specific percentage band as an \emph{estimated}
+numerical mark. Grade categories that could not be converted reasonably
+or defensibly, including the 1--5 ordinal systems, ambiguous entries and
+values ourside continuous-attainment datasets. This left us with 1362
+converted numerical grades and 320 estimated letter grades (1662
+observations in total). Grade-band midpoints are approximations, and it
+is important to note than converting to a common range does not remove
+the differences in grading standards across different institutions.
+
+\paragraph{Attention Checks and Exclusion
+Criteria}\label{attention-checks-and-exclusion-criteria}
+
+We assessed response quality using the six attention check items and the
+`attention\_amnesty' response. Participants were excluded if they
+answered at least one administered check incorrectly or explicitly
+selected `\,``No''\,' to the amnesty question. Missing check or amnesty
+responses were \textbf{not} interpreted as failures as the questions
+were not necessarily recorded for every survey. Under these rules, 1542
+participants remained after attainment and quality screening. This is
+the \emph{data-preparation sample}, not necessarily the final analysis
+sample: the anxiety-scale completeness criteria will be applied
+subsequently.
+
+The participant counts at each stage are summarised in the table below.
+Of the 1542 kept observations, 165 had no recorded attention check
+answers and 70 had a missing amnesty response. So, the conclusions
+should be checked for the sensitivity to the treatment of missing
+quality information. Results could also depend on if the estimated
+letter grades are included.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lrr@{}}
+\toprule\noalign{}
+Stage & N & Excluded \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Original dataset & 12570 & NA \\
+Non-missing grade entries & 1820 & 10750 \\
+Usable standardised attainment & 1682 & 138 \\
+After attention amnesty & 1655 & 27 \\
+After attention checks & 1542 & 113 \\
+\end{longtable}
+}
+
+\subsubsection{Anxiety measures and
+scoring}\label{anxiety-measures-and-scoring}
+
+\emph{To be completed by Alice.}
+
+\subsubsection{Statistical analysis and effect
+size}\label{statistical-analysis-and-effect-size}
+
+\emph{To be completed by Leah.}
+
+\subsubsection{Mathematics anxiety
+comparison}\label{mathematics-anxiety-comparison}
+
+\emph{To be completed by Alex.}
+
+\subsubsection{Interpretation and
+limitations}\label{interpretation-and-limitations}
+
+\emph{To be completed together.}
+
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY
+ONE) Q8.2\_1 to Q8.2\_24 RMARS-S is like RMARS but replaces the maths
+with stats Q7.2\_1 to Q7.2\_23 STARS is statistics anxiety rating scale
+(NORMAL STATS ANXIETY ONE) Q7.1\_1 to Q7.1\_23 STARS-M is a modified
+version of STARS but replaces the stats with maths Q8.1\_1 to Q8.1\_20
+
+\subsection{Effect size summary}\label{effect-size-summary-1}
+
+Simply state:
+
+d = A, 95\% CI {[}B, C{]} based on N = D.
+
+where A, B, C are replaced with the values that you have found using
+data from D participants.
+
+\subsection{Summary of the analysis
+approach}\label{summary-of-the-analysis-approach-1}
+
+Note that the \texttt{echo\ =\ FALSE} parameter was added to the code
+chunk to prevent printing of the R code that generated the plot.
+
+Give a short summary of your approach, specifying the type of analysis
+you used and any other important choices you made (e.g., about which
+data to include/exclude).
+
+\subsection{Details of the analysis}\label{details-of-the-analysis-1}
+
+This is the main body of the report, which should make clear how you
+arrived at the values quoted in the first section. This should be in a
+similar style to the lecture notes for this course, with a mix of text,
+R code, and output generated by the code. It may be helpful to think of
+the intended audience as a classmate who has not yet engaged with the
+project -- you can assume a good level of statistical background
+knowledge, but you will need to give a concise explanation of the
+important features of the dataset and your specific analysis choices.
+There is no specific page limit, since it will depend on the amount of
+code and plots included, but should be unlikely to need more than 6
+pages.
+
+\end{document}

@@ -2,7 +2,9 @@
 title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -72,13 +74,13 @@ nrow(smarvus_grades)
 #### Standarising Attainment Across Institutions
 
 
-Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institutions lowest and highest documented grades before we contrusted a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
+Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institutions lowest and highest documented grades before we constructed a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
 
 \[
 \text{Scaled grade} = 100\,\frac{\text{Observed grade} - \text{Lowest possible grade}}{\text{Highest possible grade} - \text{Lowest possible grade}}.
 \]
 
-To keep observations that used letter grades, we usedthe midpoint of the applicable institution-specific percentage band as an *estimated* numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values ourside continuous-attainment datasets. This left us with 1362 converted numerical grades and 320 estimated letter grades (1662 observations in total). Grade-band midpoints are approximations, and it is important to note than converting to a common range does not remove the differences in grading standards across different institutions.
+To keep observations that used letter grades, we used the midpoint of the applicable institution-specific percentage band as an *estimated* numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values outside continuous-attainment datasets. This left us with 1362 converted numerical grades and 320 estimated letter grades (1662 observations in total). Grade-band midpoints are approximations, and it is important to note than converting to a common range does not remove the differences in grading standards across different institutions.
 
 
 
@@ -301,8 +303,152 @@ write_csv(exclusion_flow, "exclusion_flow.csv")
 
 ### Anxiety measures and scoring
 
-*To be completed by Alice.*
+Start by looking at the missing entries for the 4 different style of statistic and maths anxiety testing. 
 
+```{r check-entries, include=FALSE}
+
+stars_items   <- smarvus_clean %>% select(Q7.1_1:Q7.1_23)
+rmars_s_items <- smarvus_clean %>% select(Q7.2_1:Q7.2_23)
+stars_m_items <- smarvus_clean %>% select(Q8.1_1:Q8.1_20)
+rmars_items   <- smarvus_clean %>% select(Q8.2_1:Q8.2_24)
+
+stars_na   <- rowSums(is.na(stars_items))
+rmars_s_na <- rowSums(is.na(rmars_s_items))
+stars_m_na <- rowSums(is.na(stars_m_items))
+rmars_na   <- rowSums(is.na(rmars_items))
+
+missing_summary <- tibble(
+  Scale = c("STARS (Stats)", "RMARS-S (Stats)", "STARS-M (Maths)", "RMARS (Maths)"),
+  Items = c(ncol(stars_items), ncol(rmars_s_items), ncol(stars_m_items), ncol(rmars_items)),
+  No_Missing_Answers = c(sum(stars_na == 0), sum(rmars_s_na == 0), sum(stars_m_na == 0), sum(rmars_na == 0)),
+  
+  # number who skipped some questions (at least 1 missing, but not all)
+  Partial_Missing_N = c(
+    sum(stars_na > 0 & stars_na < 23),
+    sum(rmars_s_na > 0 & rmars_s_na < 23),
+    sum(stars_m_na > 0 & stars_m_na < 20),
+    sum(rmars_na > 0 & rmars_na < 24)
+  ),
+  
+  # number who skipped every question
+  All_Missing_N = c(sum(stars_na == 23), sum(rmars_s_na == 23), sum(stars_m_na == 20), sum(rmars_na == 24)),
+  
+  Min_Val = c(
+    min(stars_items, na.rm = TRUE),
+    min(rmars_s_items, na.rm = TRUE),
+    min(stars_m_items, na.rm = TRUE),
+    min(rmars_items, na.rm = TRUE)
+  ),
+  Max_Val = c(
+    max(stars_items, na.rm = TRUE),
+    max(rmars_s_items, na.rm = TRUE),
+    max(stars_m_items, na.rm = TRUE),
+    max(rmars_items, na.rm = TRUE)
+  )
+)
+
+# Print nicely as a table
+knitr::kable(missing_summary)
+
+```
+
+Found that majority of them have complete entries but some (especially RMARS and RMARS-S) have partially missing entries. so some students answered some of the questions for that test but not all. And 14-17 students missed all the questions. hence they will be removed.
+
+We Investigated further into the partial missing entries, to see if there was a pattern.
+
+```{r check-missing-entries, include=FALSE}
+
+partial_data <- tibble(
+  `STARS`   = stars_na,
+  `RMARS-S` = rmars_s_na,
+  `STARS-M` = stars_m_na,
+  `RMARS`   = rmars_na
+) %>%
+  pivot_longer(everything(), names_to = "Scale", values_to = "Missing_Items") %>%
+  # Keep only partially missing people (at least 1 missing, but not the entire scale)
+  filter(
+    Missing_Items > 0,
+    !(Scale == "STARS"   & Missing_Items == 23),
+    !(Scale == "RMARS-S" & Missing_Items == 23),
+    !(Scale == "STARS-M" & Missing_Items == 20),
+    !(Scale == "RMARS"   & Missing_Items == 24)
+  )
+
+# Plot a separate bar chart for each scale using facet_wrap()
+# factor(Missing_Items) makes R treat each numberggplot(partial_data, aes(x = factor(Missing_Items))) +
+  geom_bar(fill = "steelblue") +
+  facet_wrap(~ Scale, scales = "free_x") +
+  labs(
+    title = "Items Skipped by Partially Missing Participants",
+    x = "Number of Missing Items",
+    y = "Number of Participants"
+  ) +
+  theme_minimal() as a clean category on the x-axis
+
+
+# Check which universities have people missing exactly 4 items
+smarvus_clean %>%
+  mutate(rmars_s_na = rowSums(is.na(select(., Q7.2_1:Q7.2_23)))) %>%
+  filter(rmars_s_na == 4) %>%
+  count(university, sort = TRUE)
+
+smarvus_clean %>%
+  mutate(rmars_na = rowSums(is.na(select(., Q8.2_1:Q8.2_24)))) %>%
+  filter(rmars_na == 4) %>%
+  count(university, sort = TRUE)
+
+# Check which specific RMARS-S questions have the most missing values
+# colSums(is.na(...)) counts the NAs in each COLUMN (each question)
+colSums(is.na(rmars_s_items)) %>% sort(decreasing = TRUE) %>% head(6)
+
+# 3. Do the same quick check for RMARS (maths)
+colSums(is.na(rmars_items)) %>% sort(decreasing = TRUE) %>% head(6)
+
+```
+From the bar chart we can see that in RMARS and RMARS-S, majority of students who missed questions, missed exactly 4 questions. which led us to see if these were the same 4 questions. These exactly 4 missing all came from the same university (Erasmus University Rotterdam), and all these students had not completed the last 4 questions on the RMARS and RMARS-S surveys. 
+
+
+```{r Rotterdam, include=FALSE}
+rotterdam <- smarvus_clean %>%
+  filter(university == "Erasmus University Rotterdam")
+
+nrow(rotterdam)
+
+rotterdam %>%
+  mutate(rmars_s_na = rowSums(is.na(select(., Q7.2_1:Q7.2_23)))) %>%
+  count(rmars_s_na)
+
+rotterdam %>%
+  mutate(rmars_na = rowSums(is.na(select(., Q8.2_1:Q8.2_24)))) %>%
+  count(rmars_na)
+
+rotterdam %>%
+  select(Q7.2_20:Q7.2_23, Q8.2_21:Q8.2_24) %>%
+  summarise(across(everything(), ~ sum(!is.na(.))))
+
+```
+
+None of the Rotterdam participants (77) answered the last 4 questions of the RMARS-S and RMARS questions, suggesting they weren't available on their survey. 
+
+```{r Other_Missing_entries, include=FALSE}
+
+# 1. Check if any single STARS or STARS-M question has noticeably more NAs than the rest
+# (Since 14-17 people missed the whole scale, random 1-item skips should only push numbers to ~15-19)
+colSums(is.na(stars_items)) %>% sort(decreasing = TRUE) %>% head(5)
+colSums(is.na(stars_m_items)) %>% sort(decreasing = TRUE) %>% head(5)
+
+# 2. Check who missed the ENTIRE STARS or STARS-M scale
+# Note: the "|" symbol means "OR"
+smarvus_clean %>%
+  mutate(
+    stars_all_na   = rowSums(is.na(select(., Q7.1_1:Q7.1_23))) == 23,
+    stars_m_all_na = rowSums(is.na(select(., Q8.1_1:Q8.1_20))) == 20
+  ) %>%
+  filter(stars_all_na | stars_m_all_na) %>%
+  count(university, stars_all_na, stars_m_all_na)
+
+
+```
 ### Statistical analysis and effect size
 
 *To be completed by Leah.*
