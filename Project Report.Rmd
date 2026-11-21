@@ -375,7 +375,8 @@ partial_data <- tibble(
   )
 
 # Plot a separate bar chart for each scale using facet_wrap()
-# factor(Missing_Items) makes R treat each numberggplot(partial_data, aes(x = factor(Missing_Items))) +
+# factor(Missing_Items) makes R treat each number
+ggplot(partial_data, aes(x = factor(Missing_Items))) +
   geom_bar(fill = "steelblue") +
   facet_wrap(~ Scale, scales = "free_x") +
   labs(
@@ -383,7 +384,7 @@ partial_data <- tibble(
     x = "Number of Missing Items",
     y = "Number of Participants"
   ) +
-  theme_minimal() as a clean category on the x-axis
+  theme_minimal()
 
 
 # Check which universities have people missing exactly 4 items
@@ -432,7 +433,6 @@ None of the Rotterdam participants (77) answered the last 4 questions of the RMA
 
 ```{r Other_Missing_entries, include=FALSE}
 
-# 1. Check if any single STARS or STARS-M question has noticeably more NAs than the rest
 # (Since 14-17 people missed the whole scale, random 1-item skips should only push numbers to ~15-19)
 colSums(is.na(stars_items)) %>% sort(decreasing = TRUE) %>% head(5)
 colSums(is.na(stars_m_items)) %>% sort(decreasing = TRUE) %>% head(5)
@@ -448,6 +448,37 @@ smarvus_clean %>%
   count(university, stars_all_na, stars_m_all_na)
 
 
+```
+
+```{r adding-scores, include=FALSE}
+
+# 1. Count answered items on each scale, then keep only participants
+#    who answered at least 80% of items on ALL FOUR scales
+smarvus_scored <- smarvus_clean %>%
+  mutate(
+    stars_n   = rowSums(!is.na(select(., Q7.1_1:Q7.1_23))),
+    rmars_s_n = rowSums(!is.na(select(., Q7.2_1:Q7.2_23))),
+    stars_m_n = rowSums(!is.na(select(., Q8.1_1:Q8.1_20))),
+    rmars_n   = rowSums(!is.na(select(., Q8.2_1:Q8.2_24)))
+  ) %>%
+  filter(
+    stars_n   >= 0.8 * 23,
+    rmars_s_n >= 0.8 * 23,
+    stars_m_n >= 0.8 * 20,
+    rmars_n   >= 0.8 * 24
+  ) %>%
+  mutate(
+    # Mean scores (all on a 1 to 5 scale)
+    stars_mean   = rowMeans(select(., Q7.1_1:Q7.1_23), na.rm = TRUE),
+    rmars_s_mean = rowMeans(select(., Q7.2_1:Q7.2_23), na.rm = TRUE),
+    stars_m_mean = rowMeans(select(., Q8.1_1:Q8.1_20), na.rm = TRUE),
+    rmars_mean   = rowMeans(select(., Q8.2_1:Q8.2_24), na.rm = TRUE),
+  )
+
+# 2. Check how many participants were kept vs. removed at this stage
+nrow(smarvus_clean)                        # Before (should be 1542)
+nrow(smarvus_scored)                       # After (should be ~1510)
+nrow(smarvus_clean) - nrow(smarvus_scored) # Number excluded for incomplete anxiety scales
 ```
 ### Statistical analysis and effect size
 
