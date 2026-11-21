@@ -305,10 +305,17 @@ write_csv(exclusion_flow, "exclusion_flow.csv")
 
 ### Anxiety measures and scoring
 
-Start by looking at the missing entries for the 4 different style of statistic and maths anxiety testing. 
+Following the attainment standardisation and quality screening above, we are left with $N = 1,542$. The next step is to construct reliable anxiety scores from the questionnaire results in this dataset.The SMARVUS survey includes four anxiety scales, two measuring statistics anxiety and two measuring mathematics anxiety. The original instruments are the Statistics Anxiety Rating Scale (STARS; Q7.1_1–Q7.1_23, 23 questions) and the Revised Mathematics Anxiety Rating Scale (RMARS; Q8.2_1–Q8.2_24, 24 questions). Because these two scales differ slightly, STARS includes questions on fear of asking for help, whereas RMARS does not. The SMARVUS authors also created modified versions of each scale that swap the subject wording: a mathematics version of STARS (STARS-M; Q8.1_1–Q8.1_20, 20 questions) and a statistics version of RMARS (RMARS-S; Q7.2_1–Q7.2_23, 23 questions). Including all four scales allows us to test whether statistics anxiety and mathematics anxiety are genuinely distinct constructs or are testing the same thing.
 
-```{r check-entries, include=FALSE}
+All items across the four scales are rated on a 1–5 scale, where 5 represents a high enxiety and 1 a low anxiety. Two of the attention-check items used in the previous section sit directly at the end of the STARS and STARS-M blocks (Q7.1_24 and Q8.1_21), so these were excluded when selecting the scale items.
 
+
+##### Investigating Missing Entries
+
+Before calculating any scores, we checked that all observed responses fell within the expected 1–5 range and inspected how many NAs are present on each scale.
+
+```{r anxiety-missing-check, include=FALSE}
+# Pull out the item columns for each of the four anxiety scales
 stars_items   <- smarvus_clean %>% select(Q7.1_1:Q7.1_23)
 rmars_s_items <- smarvus_clean %>% select(Q7.2_1:Q7.2_23)
 stars_m_items <- smarvus_clean %>% select(Q8.1_1:Q8.1_20)
@@ -319,29 +326,25 @@ rmars_s_na <- rowSums(is.na(rmars_s_items))
 stars_m_na <- rowSums(is.na(stars_m_items))
 rmars_na   <- rowSums(is.na(rmars_items))
 
+
 missing_summary <- tibble(
-  Scale = c("STARS (Stats)", "RMARS-S (Stats)", "STARS-M (Maths)", "RMARS (Maths)"),
+  Scale = c("STARS", "RMARS-S", "STARS-M", "RMARS"),
   Items = c(ncol(stars_items), ncol(rmars_s_items), ncol(stars_m_items), ncol(rmars_items)),
-  No_Missing_Answers = c(sum(stars_na == 0), sum(rmars_s_na == 0), sum(stars_m_na == 0), sum(rmars_na == 0)),
-  
-  # number who skipped some questions (at least 1 missing, but not all)
+  Complete_N = c(sum(stars_na == 0), sum(rmars_s_na == 0), sum(stars_m_na == 0), sum(rmars_na == 0)),
   Partial_Missing_N = c(
     sum(stars_na > 0 & stars_na < 23),
     sum(rmars_s_na > 0 & rmars_s_na < 23),
     sum(stars_m_na > 0 & stars_m_na < 20),
     sum(rmars_na > 0 & rmars_na < 24)
   ),
-  
-  # number who skipped every question
   All_Missing_N = c(sum(stars_na == 23), sum(rmars_s_na == 23), sum(stars_m_na == 20), sum(rmars_na == 24)),
-  
-  Min_Val = c(
+  Min = c(
     min(stars_items, na.rm = TRUE),
     min(rmars_s_items, na.rm = TRUE),
     min(stars_m_items, na.rm = TRUE),
     min(rmars_items, na.rm = TRUE)
   ),
-  Max_Val = c(
+  Max = c(
     max(stars_items, na.rm = TRUE),
     max(rmars_s_items, na.rm = TRUE),
     max(stars_m_items, na.rm = TRUE),
@@ -349,16 +352,23 @@ missing_summary <- tibble(
   )
 )
 
-# Print nicely as a table
-knitr::kable(missing_summary)
+```
+
+```{r anxiety-missing-table, echo=FALSE}
+knitr::kable(
+  missing_summary,
+  col.names = c("Scale", "Number of Questions", "Complete sets of answers", "Partially Missing", "All Missing", "Min", "Max"),
+  caption = "NA's and observed response range for each anxiety scale."
+)
 
 ```
 
-Found that majority of them have complete entries but some (especially RMARS and RMARS-S) have partially missing entries. so some students answered some of the questions for that test but not all. And 14-17 students missed all the questions. hence they will be removed.
 
-We Investigated further into the partial missing entries, to see if there was a pattern.
+As shown in the table above, every recorded response across all four scales lay as expected between 1 and 5. Majority of the results are complete, with only 14 to 17 participants skipping an entire scale. However, a clear split appeared in partial missingness: while STARS and STARS-M had only 7 and 6 partially missing respondents respectively, RMARS-S had 83 and RMARS had 82. To see whether those participants were skipping just one or two questions or leaving large chunks blank, we plotted the number of missing items among partially missing respondents only.
 
-```{r check-missing-entries, include=FALSE}
+
+
+```{r anxiety-partial-plot, echo=FALSE, fig.height=3.5, fig.width=6.5}
 
 partial_data <- tibble(
   `STARS`   = stars_na,
@@ -367,7 +377,6 @@ partial_data <- tibble(
   `RMARS`   = rmars_na
 ) %>%
   pivot_longer(everything(), names_to = "Scale", values_to = "Missing_Items") %>%
-  # Keep only partially missing people (at least 1 missing, but not the entire scale)
   filter(
     Missing_Items > 0,
     !(Scale == "STARS"   & Missing_Items == 23),
@@ -376,8 +385,6 @@ partial_data <- tibble(
     !(Scale == "RMARS"   & Missing_Items == 24)
   )
 
-# Plot a separate bar chart for each scale using facet_wrap()
-# factor(Missing_Items) makes R treat each number
 ggplot(partial_data, aes(x = factor(Missing_Items))) +
   geom_bar(fill = "steelblue") +
   facet_wrap(~ Scale, scales = "free_x") +
@@ -388,100 +395,235 @@ ggplot(partial_data, aes(x = factor(Missing_Items))) +
   ) +
   theme_minimal()
 
+```
 
-# Check which universities have people missing exactly 4 items
-smarvus_clean %>%
-  mutate(rmars_s_na = rowSums(is.na(select(., Q7.2_1:Q7.2_23)))) %>%
+
+The plot revealed two very different patterns. On STARS and STARS-M, every single partially missing participant hadn't answered only 1 question, and checking by question number and institution confirmed that these were spread acorss question number and across multiple universities rather than concentrated in one place. In contrast, RMARS-S and RMARS both showed a large spike at exactly 4 missing items.
+
+
+```{r anxiety-spike-check, include=FALSE}
+# Find which universities have participants missing exactly 4 items on RMARS-S and RMARS
+rmarss_4_unis <- smarvus_clean %>%
+  mutate(rmars_s_na = rmars_s_na) %>%
   filter(rmars_s_na == 4) %>%
   count(university, sort = TRUE)
 
-smarvus_clean %>%
-  mutate(rmars_na = rowSums(is.na(select(., Q8.2_1:Q8.2_24)))) %>%
+rmars_4_unis <- smarvus_clean %>%
+  mutate(rmars_na = rmars_na) %>%
   filter(rmars_na == 4) %>%
   count(university, sort = TRUE)
 
-# Check which specific RMARS-S questions have the most missing values
-# colSums(is.na(...)) counts the NAs in each COLUMN (each question)
-colSums(is.na(rmars_s_items)) %>% sort(decreasing = TRUE) %>% head(6)
+spike_uni     <- rmarss_4_unis %>% slice(1) %>% pull(university)
+n_spike_uni   <- sum(smarvus_clean$university == spike_uni, na.rm = TRUE)
+spike_rmarss  <- rmarss_4_unis %>% slice(1) %>% pull(n)
+spike_rmars   <- rmars_4_unis %>% slice(1) %>% pull(n)
+n_clean       <- nrow(smarvus_clean)
 
-# 3. Do the same quick check for RMARS (maths)
-colSums(is.na(rmars_items)) %>% sort(decreasing = TRUE) %>% head(6)
+# which specific questions have the most missing values on each scale
+top_missing_rmarss <- colSums(is.na(rmars_s_items)) %>% sort(decreasing = TRUE) %>% head(6)
+top_missing_rmars  <- colSums(is.na(rmars_items)) %>% sort(decreasing = TRUE) %>% head(6)
 
-```
-From the bar chart we can see that in RMARS and RMARS-S, majority of students who missed questions, missed exactly 4 questions. which led us to see if these were the same 4 questions. These exactly 4 missing all came from the same university (Erasmus University Rotterdam), and all these students had not completed the last 4 questions on the RMARS and RMARS-S surveys. 
+# 3. Find the 4 questions with the most missing values on each scale
+top4_rmarss <- colSums(is.na(rmars_s_items)) %>% sort(decreasing = TRUE) %>% head(4) %>% names()
+top4_rmars  <- colSums(is.na(rmars_items))   %>% sort(decreasing = TRUE) %>% head(4) %>% names()
 
+# Confirm whether any student at that university answered those 4 questions
+spike_uni_data <- smarvus_clean %>%
+  filter(university == spike_uni)
 
-```{r Rotterdam, include=FALSE}
-rotterdam <- smarvus_clean %>%
-  filter(university == "Erasmus University Rotterdam")
-
-nrow(rotterdam)
-
-rotterdam %>%
-  mutate(rmars_s_na = rowSums(is.na(select(., Q7.2_1:Q7.2_23)))) %>%
-  count(rmars_s_na)
-
-rotterdam %>%
-  mutate(rmars_na = rowSums(is.na(select(., Q8.2_1:Q8.2_24)))) %>%
-  count(rmars_na)
-
-rotterdam %>%
-  select(Q7.2_20:Q7.2_23, Q8.2_21:Q8.2_24) %>%
-  summarise(across(everything(), ~ sum(!is.na(.))))
-
+rmarss_top4_answered <- sum(!is.na(spike_uni_data %>% select(all_of(top4_rmarss))))
+rmars_top4_answered  <- sum(!is.na(spike_uni_data %>% select(all_of(top4_rmars))))
 ```
 
-None of the Rotterdam participants (77) answered the last 4 questions of the RMARS-S and RMARS questions, suggesting they weren't available on their survey. 
 
-```{r Other_Missing_entries, include=FALSE}
+Further investigation by institution showed that this spike came from Erasmus University Rotterdam ($n = 77$), where 75 students were missing four items on RMARS-S and 75 were missing four items on RMARS. Checking missingness by question confirmed that not a single participant from Erasmus University Rotterdam had recorded responses for the final four items of either scale. This indicates that these questions were omitted from the Erasmus University Rotterdam version of the survey.
 
-# (Since 14-17 people missed the whole scale, random 1-item skips should only push numbers to ~15-19)
-colSums(is.na(stars_items)) %>% sort(decreasing = TRUE) %>% head(5)
-colSums(is.na(stars_m_items)) %>% sort(decreasing = TRUE) %>% head(5)
+Because the four scales differ in length (20, 23, and 24), we scored each scale using the mean item score rather than a raw sum score. Taking the mean places all four anxiety measures on the same 1–5 scale so they can be compared directly, and prevents students with a small number of omitted items from receiving artificially low scores.
 
-# 2. Check who missed the ENTIRE STARS or STARS-M scale
-# Note: the "|" symbol means "OR"
-smarvus_clean %>%
-  mutate(
-    stars_all_na   = rowSums(is.na(select(., Q7.1_1:Q7.1_23))) == 23,
-    stars_m_all_na = rowSums(is.na(select(., Q8.1_1:Q8.1_20))) == 20
-  ) %>%
-  filter(stars_all_na | stars_m_all_na) %>%
-  count(university, stars_all_na, stars_m_all_na)
+*note - not sure whether to remove all participants with missing entries for the 4 tests, or just ones where a large amount are missing*
 
+Applying an 80% threshold retains Rotterdam (who completed 82.6% of RMARS-S and 83.3% of RMARS) as well as the handful of students who skipped one or two items, while still excluding anyone who missed an entire scale or large blocks of questions.
 
-```
+Below, we calculate the anxiety scores and descriptive statistics. 
 
-```{r adding-scores, include=FALSE}
+#### Option 1:
 
-# 1. Count answered items on each scale, then keep only participants
-#    who answered at least 80% of items on ALL FOUR scales
-smarvus_scored <- smarvus_clean %>%
+```{r score-option-1, include=FALSE}
+# Compute mean scores using the 80% completion threshold
+smarvus_scores_80_all <- smarvus_clean %>%
   mutate(
     stars_n   = rowSums(!is.na(select(., Q7.1_1:Q7.1_23))),
     rmars_s_n = rowSums(!is.na(select(., Q7.2_1:Q7.2_23))),
     stars_m_n = rowSums(!is.na(select(., Q8.1_1:Q8.1_20))),
-    rmars_n   = rowSums(!is.na(select(., Q8.2_1:Q8.2_24)))
-  ) %>%
-  filter(
-    stars_n   >= 0.8 * 23,
-    rmars_s_n >= 0.8 * 23,
-    stars_m_n >= 0.8 * 20,
-    rmars_n   >= 0.8 * 24
-  ) %>%
-  mutate(
-    # Mean scores (all on a 1 to 5 scale)
-    stars_mean   = rowMeans(select(., Q7.1_1:Q7.1_23), na.rm = TRUE),
-    rmars_s_mean = rowMeans(select(., Q7.2_1:Q7.2_23), na.rm = TRUE),
-    stars_m_mean = rowMeans(select(., Q8.1_1:Q8.1_20), na.rm = TRUE),
-    rmars_mean   = rowMeans(select(., Q8.2_1:Q8.2_24), na.rm = TRUE),
+    rmars_n   = rowSums(!is.na(select(., Q8.2_1:Q8.2_24))),
+
+    stars_mean   = if_else(stars_n   >= 0.8 * 23, rowMeans(select(., Q7.1_1:Q7.1_23), na.rm = TRUE), NA_real_),
+    rmars_s_mean = if_else(rmars_s_n >= 0.8 * 23, rowMeans(select(., Q7.2_1:Q7.2_23), na.rm = TRUE), NA_real_),
+    stars_m_mean = if_else(stars_m_n >= 0.8 * 20, rowMeans(select(., Q8.1_1:Q8.1_20), na.rm = TRUE), NA_real_),
+    rmars_mean   = if_else(rmars_n   >= 0.8 * 24, rowMeans(select(., Q8.2_1:Q8.2_24), na.rm = TRUE), NA_real_)
   )
 
-# 2. Check how many participants were kept vs. removed at this stage
-nrow(smarvus_clean)                        # Before (should be 1542)
-nrow(smarvus_scored)                       # After (should be ~1510)
-nrow(smarvus_clean) - nrow(smarvus_scored) # Number excluded for incomplete anxiety scales
+desc_option_1 <- smarvus_scores_80_all %>%
+  select(stars_mean, rmars_s_mean, stars_m_mean, rmars_mean) %>%
+  pivot_longer(everything(), names_to = "Scale", values_to = "Score") %>%
+  mutate(
+    Scale = recode(
+      Scale,
+      stars_mean   = "STARS",
+      rmars_s_mean = "RMARS-S",
+      stars_m_mean = "STARS-M",
+      rmars_mean   = "RMARS"
+    )
+  ) %>%
+  group_by(Scale) %>%
+  summarise(
+    Valid_N     = sum(!is.na(Score)),
+    Missing_N   = sum(is.na(Score)),
+    Missing_Pct = round(mean(is.na(Score)) * 100, 1),
+    Mean        = round(mean(Score, na.rm = TRUE), 2),
+    SD          = round(sd(Score, na.rm = TRUE), 2),
+    Min         = round(min(Score, na.rm = TRUE), 2),
+    Max         = round(max(Score, na.rm = TRUE), 2),
+    .groups = "drop"
+  )
+
+
+smarvus_scored_80 <- smarvus_scores_80_all %>%
+  filter(!is.na(stars_mean), !is.na(rmars_s_mean), !is.na(stars_m_mean), !is.na(rmars_mean))
+
+n_scored_80   <- nrow(smarvus_scored_80)
+n_excluded_80 <- n_clean - n_scored_80
+
+
 ```
+
+Applying the 80% threshold across all four scales excludes 33 participants, leaving 1509 participants for analysis. The descriptive statistics for each scale under this rule are summarised below.
+
+
+```{r desc-table-option-a, echo=FALSE}
+knitr::kable(
+  desc_option_1,
+  col.names = c("Scale", "Valid (N)", "Missing (N)", "Missing (%)", "Mean", "SD", "Min", "Max"),
+  caption = "Descriptive statistics for the four anxiety scales under the 80% completion threshold (evaluated on N = 1,542)."
+)
+```
+
+###### Option B: Complete-Case Scoring *(Group: delete Option before submission)*
+
+Under this stricter rule, a participant only receives a score on a scale if they answered every item on that scale, and only participants with complete responses across all four scales are retained.
+
+
+```{r score-option-b, include=FALSE}
+# Compute mean scores ONLY when 100% of items are answered (0 missing)
+smarvus_scores_complete_all <- smarvus_clean %>%
+  mutate(
+    stars_n   = rowSums(!is.na(select(., Q7.1_1:Q7.1_23))),
+    rmars_s_n = rowSums(!is.na(select(., Q7.2_1:Q7.2_23))),
+    stars_m_n = rowSums(!is.na(select(., Q8.1_1:Q8.1_20))),
+    rmars_n   = rowSums(!is.na(select(., Q8.2_1:Q8.2_24))),
+
+    stars_mean   = if_else(stars_n   == 23, rowMeans(select(., Q7.1_1:Q7.1_23)), NA_real_),
+    rmars_s_mean = if_else(rmars_s_n == 23, rowMeans(select(., Q7.2_1:Q7.2_23)), NA_real_),
+    stars_m_mean = if_else(stars_m_n == 20, rowMeans(select(., Q8.1_1:Q8.1_20)), NA_real_),
+    rmars_mean   = if_else(rmars_n   == 24, rowMeans(select(., Q8.2_1:Q8.2_24)), NA_real_)
+  )
+
+desc_option_2 <- smarvus_scores_complete_all %>%
+  select(stars_mean, rmars_s_mean, stars_m_mean, rmars_mean) %>%
+  pivot_longer(everything(), names_to = "Scale", values_to = "Score") %>%
+  mutate(
+    Scale = recode(
+      Scale,
+      stars_mean   = "STARS",
+      rmars_s_mean = "RMARS-S)",
+      stars_m_mean = "STARS-M",
+      rmars_mean   = "RMARS"
+    )
+  ) %>%
+  group_by(Scale) %>%
+  summarise(
+    Valid_N     = sum(!is.na(Score)),
+    Missing_N   = sum(is.na(Score)),
+    Missing_Pct = round(mean(is.na(Score)) * 100, 1),
+    Mean        = round(mean(Score, na.rm = TRUE), 2),
+    SD          = round(sd(Score, na.rm = TRUE), 2),
+    Min         = round(min(Score, na.rm = TRUE), 2),
+    Max         = round(max(Score, na.rm = TRUE), 2),
+    .groups = "drop"
+  )
+
+smarvus_scored_complete <- smarvus_scores_complete_all %>%
+  filter(!is.na(stars_mean), !is.na(rmars_s_mean), !is.na(stars_m_mean), !is.na(rmars_mean))
+
+n_scored_complete   <- nrow(smarvus_scored_complete)
+n_excluded_complete <- n_clean - n_scored_complete
+
+
+```
+
+Requiring complete responses across all four scales excludes 130 participants, leaving 1412 for analysis.
+
+
+```{r desc-table-option-b, echo=FALSE}
+knitr::kable(
+  desc_option_2,
+  col.names = c("Scale", "Valid (N)", "Missing (N)", "Missing (%)", "Mean", "SD", "Min", "Max"),
+  caption = "Descriptive statistics for the four anxiety scales under strict complete-case scoring (evaluated on N = 1,542)."
+)
+```
+
+To check the shape of the four anxiety measures—and look for any skewness, outliers, or clustering at the extremes of the 1–5 scale, we plotted histograms of the scored variables.
+
+
+```{r anxiety-distributions-plot, echo=FALSE, fig.height=4, fig.width=6.5}
+
+# (Uses smarvus_scored_80; swap to smarvus_scored_complete if Option 2 is chosen)
+smarvus_scored_80 %>%
+  select(stars_mean, rmars_s_mean, stars_m_mean, rmars_mean) %>%
+  pivot_longer(everything(), names_to = "Scale", values_to = "Score") %>%
+  mutate(
+    Scale = recode(
+      Scale,
+      stars_mean   = "STARS (Statistics)",
+      rmars_s_mean = "RMARS-S (Statistics)",
+      stars_m_mean = "STARS-M (Mathematics)",
+      rmars_mean   = "RMARS (Mathematics)"
+    )
+  ) %>%
+  ggplot(aes(x = Score)) +
+  geom_histogram(binwidth = 0.25, fill = "steelblue", colour = "white") +
+  facet_wrap(~ Scale) +
+  labs(
+    title = "Distribution of Mean Anxiety Scores Across the Four Scales",
+    x = "Mean Score (1–5)",
+    y = "Number of Participants"
+  ) +
+  theme_minimal()
+```
+
+All four anxiety scales show roughly symmetric, bell-shaped distributions centered near the midpoint of 3, with RMARS-S centered slightly higher than the other three measures. Scores are well spread across the 1–5 range with no obvious skewness, outliers, or clustering at the floor or ceiling of the scale. This indicates that all four composite scores are well-behaved and suitable for analysis.
+
+##### Scoring Limitations
+
+There are a few limitations when interpreting these anxiety scores. If keeps the 80% completion threshold, scores for RMARS-S and RMARS are averaged over 19 and 20 items rather than 23 and 24. Averaging over answered items implicitly assumes that the omitted questions would have had the same average anxiety rating as the rest of the scale; if those final four items tended higher or lower anxiety, scores for that cohort could be slightly shifted. Using fewer items can also slightly reduce measurement precision, which in turn can attenuate standardised effect sizes (Simpson, 2017). Conversely, requiring 100% complete responses avoids this assumption at the cost of losing an entire institution from the sample. 
+
+Averaging all items on a questionnaire into a single overall score treats each type of anxiety as one uniform trait. In reality, both STARS and RMARS cover several distinct areas—such as test anxiety and fear of asking for help—and combining them into one mean could hide differences in how each aspect relates to attainment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Statistical analysis and effect size
 
 *To be completed by Leah.*
