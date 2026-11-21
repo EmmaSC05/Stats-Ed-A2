@@ -12,7 +12,7 @@ library(tidyverse)
 ```
 
 
-```{r load-data, message=FALSE, warning=FALSE}
+```{r load-data,include=FALSE, message=FALSE, warning=FALSE}
 # Load the SMARVUS dataset
 data_file <- "smarvus_complete_050524.csv"
 
@@ -25,21 +25,34 @@ if (!file.exists(data_file)) {
 }
 ```
 
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
-RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7.1_23
-STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
+## Effect Size Summary
+
+*to be completed using our final analysis:*
+
+\(d = A, \ 95\%\ \mathrm{CI}\ [B,C]\), based on \(N = D\).
 
 
-```{r data cleaning - emma c}
+## Summary of the Analysis Approach
 
+*to be completed together after choosing the primary analysis (max 100 words)*
 
-# initial data inspection
+## Details of the Analysis
+
+### Data Preparation and Participant Exclusions
+
+#### Initial Inspection and Grade Availability
+
+The SMARVUS dataset contained 12,570 observations and 788 variables. We checked for identical rows and missing or duplicated participant identifiers ('unique_id'); none were found. Missing reponses were investigated with reference to the variables required for this analysis rather than excluding participants with missing entries in other places of the questionnaire. Statistics attainment was recorded in 'grade', with 1820 participants having a grade entry other than 'NA' or '"Not Available"'.
+
+```{r initial data inspection, include=FALSE}
+
+# Initial dataset inspection
 data_summary <- tibble(
   Observations = nrow(smarvus_raw),
   Variables = ncol(smarvus_raw),
   Duplicate_rows = sum(duplicated(smarvus_raw)),
-  Missing_values = sum(is.na(smarvus_raw))
+  Duplicate_IDs = sum(duplicated(smarvus_raw$unique_id)),
+  Missing_IDs = sum(is.na(smarvus_raw$unique_id))
 )
 
 data_summary
@@ -47,53 +60,280 @@ data_summary
 
 
 
-```{r missing data}
-# missing values for each variable
+```{r recorded-grades, include=FALSE}
 
-missing_summary <- smarvus_raw %>%
-  summarise(across(
-    everything(),
-    ~sum(is.na(.))
-  )) %>%
-  pivot_longer(
-    everything(),
-    names_to = "Variable",
-    values_to = "Missing"
-  ) %>%
-  mutate(
-    Percent_Missing =
-      round(100 * Missing / nrow(smarvus_raw), 1)
-  ) %>%
-  arrange(desc(Percent_Missing))
-
-print(missing_summary, n = 30)
-
-
-```
-
-
-
-
-```{r attainment-inspection}
-# Check how grades are recorded
-smarvus_raw %>%
-  count(grade, sort = TRUE) %>%
-  head(40)
-
-# Create a dataset of participants with recorded grades
+# Participants with recorded grades
 smarvus_grades <- smarvus_raw %>%
-  filter(!is.na(grade),
-         grade != "Not Available")
+  filter(!is.na(grade), grade != "Not Available")
 
-# Check sample size
 nrow(smarvus_grades)
-
-# Examine the grading systems
-smarvus_grades %>%
-  select(country, survey_id, grade,
-         grade_low, grade_high, grade_category_notes) %>%
-  head(20)
 ```
+
+#### Standarising Attainment Across Institutions
+
+
+Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institutions lowest and highest documented grades before we contrusted a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
+
+\[
+\text{Scaled grade} = 100\,\frac{\text{Observed grade} - \text{Lowest possible grade}}{\text{Highest possible grade} - \text{Lowest possible grade}}.
+\]
+
+To keep observations that used letter grades, we usedthe midpoint of the applicable institution-specific percentage band as an *estimated* numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values ourside continuous-attainment datasets. This left us with 1362 converted numerical grades and 320 estimated letter grades (1662 observations in total). Grade-band midpoints are approximations, and it is important to note than converting to a common range does not remove the differences in grading standards across different institutions.
+
+
+
+
+```{r grade-systems, include=FALSE}
+# Compare grading systems across surveys
+grade_summary <- smarvus_grades %>%
+  group_by(country, survey_id, grade_low, grade_high) %>%
+  summarise(
+    n = n(),
+    Example_grades = paste(head(unique(grade), 3),
+                           collapse = ", "),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n))
+
+print(n=22, grade_summary)
+```
+
+```{r grade-boundaries, include=FALSE}
+# Institution-specific letter grade boundaries
+
+grade_boundaries <- bind_rows(
+  tibble(
+    survey_id = "brawijaya",
+    grade = c("A", "B+", "B", "C+", "C", "D+", "D", "E"),
+    lower = c(80, 75, 69, 60, 55, 50, 44, 0),
+    upper = c(100, 80, 75, 69, 60, 55, 50, 44)
+  ),
+
+  tibble(
+    survey_id = "york_can",
+    grade = c("A+", "A", "B+", "B", "C+", "C", "D+", "D", "E", "F"),
+    lower = c(90, 80, 75, 70, 65, 60, 55, 50, 40, 0),
+    upper = c(100, 89, 79, 74, 69, 64, 59, 54, 49, 39)
+  ),
+
+  tibble(
+    survey_id = "mef",
+    grade = c("A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F"),
+    lower = c(90, 80, 75, 70, 65, 60, 55, 50, 45, 35, 0),
+    upper = c(100, 89, 79, 74, 69, 64, 59, 54, 49, 44, 35)
+  ),
+
+  tibble(
+    survey_id = "limerick",
+    grade = c("A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "F"),
+    lower = c(80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 0),
+    upper = c(100, 79, 74, 69, 64, 59, 54, 49, 44, 39, 35)
+  )
+) %>%
+  mutate(
+    grade_midpoint = (lower + upper) / 2
+  )
+
+stopifnot(!anyDuplicated(grade_boundaries[c("survey_id", "grade")]))
+
+
+```
+
+
+
+```{r prepare-grades, include=FALSE}
+# Prepare numerical grades
+smarvus_prepared <- smarvus_raw %>%
+  mutate(
+    
+    grade_clean = str_trim(grade),
+    
+    # Convert numbers stored as text
+    grade_num = suppressWarnings(as.numeric(str_remove(grade_clean, "%$"))),
+    grade_low_num = suppressWarnings(as.numeric(grade_low)),
+    grade_high_num = suppressWarnings(as.numeric(grade_high)),
+
+    # Identify supported numerical grading systems
+    supported_numeric =
+      (grade_low_num == 0 & grade_high_num %in% c(10, 20, 100)) |
+      (grade_low_num == 1 & grade_high_num == 10),
+
+    # Check that marks are within their grading range
+    valid_numeric =
+      supported_numeric &
+      !is.na(grade_num) &
+      grade_num >= grade_low_num &
+      grade_num <= grade_high_num) %>%
+
+  # Add letter-grade midpoint conversions
+  left_join(
+    grade_boundaries %>%
+      select(survey_id, grade, grade_midpoint),
+    by = c("survey_id", "grade_clean" = "grade")) %>%
+
+  # Create a single attainment variable
+  mutate(
+    grade_scaled = coalesce(
+      if_else(valid_numeric,
+        100 * (grade_num - grade_low_num) / (grade_high_num - grade_low_num),
+        NA_real_),
+      grade_midpoint),
+
+    grade_method = case_when(
+      !is.na(grade_midpoint) ~ "Letter grade midpoint",
+      !is.na(grade_scaled) ~ "Numerical conversion",
+      TRUE ~ "Unresolved or unavailable"))
+
+# Check conversion results
+smarvus_prepared %>%
+  filter(!is.na(grade_clean), grade_clean != "Not Available") %>%
+  count(grade_method)
+```
+
+```{r unresolved-grades, include=FALSE}
+# Inspect observations without a usable converted grade
+smarvus_prepared %>%
+  filter(
+    !is.na(grade_clean),
+    grade_clean != "Not Available",
+    is.na(grade_scaled)
+  ) %>%
+  
+  count(survey_id, grade_clean, sort = TRUE)
+```
+
+#### Attention Checks and Exclusion Criteria
+
+
+We assessed response quality using the six attention check items and the 'attention_amnesty' response. Participants were excluded if they answered at least one administered check incorrectly or explicitly selected '"No"' to the amnesty question. Missing check or amnesty responses were **not** interpreted as failures as the questions were not necessarily recorded for every survey. Under these rules, 1542 participants remained after attainment and quality screening. This is the *data-preparation sample*, not necessarily the final analysis sample: the anxiety-scale completeness criteria will be applied subsequently.
+
+```{r attention-checks, include=FALSE}
+# Attention check variables
+check_cols <- c(
+  "Q7.1_24",
+  "Q8.1_21",
+  "Q9.1_22",
+  "Q11.1_9",
+  "Q13.1_17",
+  "Q15.1_9"
+)
+
+# Count checks answered
+smarvus_prepared$n_checks_answered <-
+  rowSums(!is.na(smarvus_prepared[, check_cols]))
+
+# Count incorrect responses to answered checks
+smarvus_prepared <- smarvus_prepared %>%
+  mutate(
+    n_checks_failed =
+      as.integer(!is.na(Q7.1_24) & Q7.1_24 != 1) +
+      as.integer(!is.na(Q8.1_21) & Q8.1_21 != 5) +
+      as.integer(!is.na(Q9.1_22) & Q9.1_22 != 1) +
+      as.integer(!is.na(Q11.1_9) & Q11.1_9 != 3) +
+      as.integer(!is.na(Q13.1_17) & Q13.1_17 != 2) +
+      as.integer(!is.na(Q15.1_9) & Q15.1_9 != 4)
+  )
+
+# Summarise attention check results for usable grades
+smarvus_prepared %>%
+  filter(!is.na(grade_scaled)) %>%
+  count(n_checks_answered, n_checks_failed)
+
+```
+
+```{r participant-exclusions, include=FALSE}
+# Participants with usable attainment
+valid_grades <- smarvus_prepared %>%
+  filter(!is.na(grade_scaled))
+
+# Exclude explicit amnesty refusals
+amnesty_passed <- valid_grades %>%
+  filter(
+    is.na(attention_amnesty) |
+      attention_amnesty != "No")
+
+# Exclude incorrect answered attention checks
+smarvus_clean <- amnesty_passed %>%
+  filter(n_checks_failed == 0)
+```
+
+The participant counts at each stage are summarised in the table below. Of the 1542 kept observations, 165 had no recorded attention check answers and 70 had a missing amnesty response. So, the conclusions should be checked for the sensitivity to the treatment of missing quality information. Results could also depend on if the estimated letter grades are included.
+
+```{r exclusion-table, echo=FALSE}
+exclusion_flow <- tibble(
+  Stage = c(
+    "Original dataset",
+    "Non-missing grade entries",
+    "Usable standardised attainment",
+    "After attention amnesty",
+    "After attention checks"
+  ),
+
+  N = c(
+    nrow(smarvus_raw),
+    nrow(smarvus_grades),
+    nrow(valid_grades),
+    nrow(amnesty_passed),
+    nrow(smarvus_clean)
+  )
+) %>%
+  mutate(
+    Excluded = lag(N) - N
+  )
+
+knitr::kable(exclusion_flow)
+```
+
+```{r validation-export, include=FALSE}
+stopifnot(
+  !anyNA(smarvus_clean$grade_scaled),
+  all(is.finite(smarvus_clean$grade_scaled)),
+  all(smarvus_clean$grade_scaled >= 0),
+  all(smarvus_clean$grade_scaled <= 100),
+  all(smarvus_clean$n_checks_failed == 0),
+  n_distinct(smarvus_clean$unique_id) == nrow(smarvus_clean)
+)
+
+write_csv(smarvus_clean, "smarvus_clean.csv")
+write_csv(exclusion_flow, "exclusion_flow.csv")
+```
+
+
+### Anxiety measures and scoring
+
+*To be completed by Alice.*
+
+### Statistical analysis and effect size
+
+*To be completed by Leah.*
+
+### Mathematics anxiety comparison
+
+*To be completed by Alex.*
+
+### Interpretation and limitations
+
+*To be completed together.*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
+RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
+STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7.1_23
+STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
+
 
 ## Effect size summary
 
