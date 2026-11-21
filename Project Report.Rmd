@@ -38,6 +38,8 @@ if (!file.exists(data_file)) {
 
 *to be completed together after choosing the primary analysis (max 100 words)*
 
+We chose an individual-level analysis rather than a meta-analysis because all observations originated from a shared dataset, allowing us to retain participant-level information and account for institutional differences directly, without relying on potentially unstable effect-size estimates from institutions with small sample sizes. *!!! WE NEED TO MAKE SURE OUR FINAL ANALYSIS ACTUALLY ACCOUNTS FOR INSTITUTIONAL DIFFERENCES !!!!*
+
 ## Details of the Analysis
 
 ### Data Preparation and Participant Exclusions
