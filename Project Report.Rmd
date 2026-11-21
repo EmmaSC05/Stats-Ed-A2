@@ -31,7 +31,7 @@ STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7
 STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
 
 
-```{r data cleaning - emma c, echo=FALSE}
+```{r data cleaning - emma c}
 
 
 # initial data inspection
@@ -47,7 +47,7 @@ data_summary
 
 
 
-```{r missing data, echo=FALSE}
+```{r missing data}
 # missing values for each variable
 
 missing_summary <- smarvus_raw %>%
