@@ -615,7 +615,11 @@ There are a few limitations when interpreting these anxiety scores. If keeps the
 Averaging all items on a questionnaire into a single overall score treats each type of anxiety as one uniform trait. In reality, both STARS and RMARS cover several distinct areas—such as test anxiety and fear of asking for help—and combining them into one mean could hide differences in how each aspect relates to attainment
 
 
+*****We went with the 80% completion threshold mainly because of the missingness pattern at Erasmus University Rotterdam. Around 75 participants were missing the final four RMARS-S and RMARS questions, which appeared not to have been administered there. Requiring 100% completion would therefore exclude participants for missing questions they weren't actually given.
 
+Using 80% completion retained 1,509 participants compared with 1,412 under complete-case scoring. We also ran a sensitivity analysis using the 100% version, and the survey-adjusted STARS coefficients were almost identical (−3.152 versus −3.177).
+
+So we chose 80% because it retained more usable data, avoided unnecessary exclusions and didn't materially change our findings. The trade-off is that partially completed scales are averaged over fewer items. ******
 
 
 
