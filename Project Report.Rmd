@@ -3,6 +3,7 @@ title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -39,6 +40,10 @@ if (!file.exists(data_file)) {
 *to be completed together after choosing the primary analysis (max 100 words)*
 
 We chose an individual-level analysis rather than a meta-analysis because all observations originated from a shared dataset, allowing us to retain participant-level information and account for institutional differences directly, without relying on potentially unstable effect-size estimates from institutions with small sample sizes. *!!! WE NEED TO MAKE SURE OUR FINAL ANALYSIS ACTUALLY ACCOUNTS FOR INSTITUTIONAL DIFFERENCES !!!!*
+
+*!!!!!! adjusted the summary above to include further analysis completed !!!!!!*
+We chose an individual-level analysis rather than a meta-analysis because the shared SMARVUS dataset allowed us to retain participant-level information and account for differences between participating surveys. Academic attainment was converted to a common scale, and anxiety scores were calculated using established questionnaire measures. Survey-adjusted regression was used to investigate the association between anxiety and attainment, with cluster-robust inference accounting for within-survey dependence. Sensitivity analyses examined how analytical decisions influenced the findings.
+
 
 ## Details of the Analysis
 
@@ -614,19 +619,363 @@ Averaging all items on a questionnaire into a single overall score treats each t
 
 
 
+## Statistical analysis and effect size
+
+### Analytical approach
+
+We examined the relationship between statistics anxiety and academic attainment using Pearson's correlation and linear regression. Statistics anxiety was measured using the mean Statistics Anxiety Rating Scale (STARS) score, ranging from 1 (low anxiety) to 5 (high anxiety), while attainment was measured using grades converted to a common 0--100 scale. The primary sample comprised 1,509 participants across 20 surveys who met the 80% completion threshold for all four anxiety measures, allowing subsequent comparisons with mathematics anxiety using a consistent sample.
+
+Pearson's correlation was used to quantify the unadjusted linear association. However, differences in grading standards, educational contexts and student populations could introduce systematic variation between surveys. We therefore fitted an initial unadjusted regression before introducing survey fixed effects. This allows each survey to have a different baseline attainment level while estimating a common within-survey association between STARS and attainment.
+
+The regression coefficient quantifies the estimated attainment-point difference associated with a one-point increase in STARS, while partial $R^2$ measures the additional explanatory contribution of statistics anxiety beyond survey differences. Model diagnostics and sensitivity analyses were used to assess the reliability of our findings.
+
+```{r stats-primary-analysis, include=FALSE}
+library(clubSandwich)
+library(sandwich)
+library(lmtest)
+
+# Common analysis sample
+analysis_data <- smarvus_scored_80
+
+# Check sample characteristics
+analysis_summary <- analysis_data %>%
+  summarise(
+    N = n(),
+    Missing_grades = sum(is.na(grade_scaled)),
+    Missing_STARS = sum(is.na(stars_mean)),
+    Surveys = n_distinct(survey_id)
+  )
+
+# Pearson correlation
+stars_cor <- cor.test(
+  ~ stars_mean + grade_scaled,
+  data = analysis_data,
+  method = "pearson"
+)
+
+# Exploratory unadjusted regression
+model_unadjusted <- lm(
+  grade_scaled ~ stars_mean,
+  data = analysis_data
+)
+
+# Primary survey-adjusted regression
+model_adjusted <- lm(
+  grade_scaled ~ stars_mean + factor(survey_id),
+  data = analysis_data
+)
+
+# Survey-only model
+model_institution <- lm(
+  grade_scaled ~ factor(survey_id),
+  data = analysis_data
+)
+
+# Compare the two regression estimates
+regression_comparison <- tibble(
+  Model = c("Unadjusted", "Survey-adjusted"),
+  N = c(
+    nobs(model_unadjusted),
+    nobs(model_adjusted)
+  ),
+  Coefficient = c(
+    unname(coef(model_unadjusted)["stars_mean"]),
+    unname(coef(model_adjusted)["stars_mean"])
+  ),
+  R_squared = c(
+    summary(model_unadjusted)$r.squared,
+    summary(model_adjusted)$r.squared
+  )
+)
+
+# Additional explanatory contribution of STARS
+model_comparison <- anova(
+  model_institution,
+  model_adjusted
+)
+
+# Partial R-squared
+r2_reduced <- summary(model_institution)$r.squared
+r2_full <- summary(model_adjusted)$r.squared
+
+partial_r2 <- (r2_full - r2_reduced) /
+  (1 - r2_reduced)
+```
+
+### Association between statistics anxiety and attainment
+
+The unadjusted relationship between statistics anxiety and academic attainment was negative but relatively weak (Pearson's $r=-0.166$, 95% CI $[-0.215,-0.117]$, $p<0.001$). As illustrated in Figure 1, higher anxiety scores were generally associated with lower grades, although substantial variation in attainment remained at each anxiety level. The correlation corresponded to $r^2=0.028$, indicating that approximately 2.8% of attainment variation was accounted for by the unadjusted linear relationship.
+
+```{r stats-anxiety-attainment-plot, echo=FALSE, message=FALSE, fig.width=6.5, fig.height=3.8, fig.cap="Figure 1. Unadjusted relationship between mean STARS score and converted academic attainment. The shaded band represents the 95% confidence interval for the fitted mean relationship."}
+ggplot(
+  analysis_data,
+  aes(x = stars_mean, y = grade_scaled)
+) +
+  geom_point(
+    alpha = 0.16,
+    size = 1,
+    colour = "steelblue",
+    position = position_jitter(
+      width = 0.025,
+      height = 0,
+      seed = 10108
+    )
+  ) +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x,
+    se = TRUE,
+    colour = "firebrick",
+    fill = "grey75"
+  ) +
+  labs(
+    x = "Mean STARS score (1-5)",
+    y = "Converted attainment (0-100)"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.minor = element_blank()
+  )
+```
+
+An initial unadjusted regression estimated a 3.51-point decrease in converted attainment per one-point increase in STARS ($\beta=-3.514$). After introducing survey fixed effects, the coefficient decreased in absolute magnitude to $-3.152$, an attenuation of approximately 10%. This demonstrates that accounting for survey differences influenced the estimated relationship, although the negative association persisted.
+
+To assess uncertainty in the survey-adjusted estimate, we calculated CR2 survey-clustered standard errors with Satterthwaite-adjusted degrees of freedom. This approach allows for heteroscedasticity and potential dependence between participants from the same survey, which conventional regression standard errors do not accommodate.
+
+```{r stats-robust-inference, include=FALSE}
+# Conventional inference
+conventional_result <- summary(
+  model_adjusted
+)$coefficients["stars_mean", ]
+
+# HC3 heteroscedasticity-robust inference
+hc3_result <- lmtest::coeftest(
+  model_adjusted,
+  vcov. = sandwich::vcovHC(
+    model_adjusted,
+    type = "HC3"
+  )
+)["stars_mean", ]
+
+# CR2 survey-clustered inference
+cluster_test <- clubSandwich::coef_test(
+  model_adjusted,
+  vcov = "CR2",
+  cluster = analysis_data$survey_id,
+  test = "Satterthwaite"
+)
+
+stars_cr2 <- cluster_test[
+  cluster_test$Coef == "stars_mean",
+]
+
+# Extract coefficient and uncertainty estimates
+beta <- stars_cr2$beta
+se <- stars_cr2$SE
+df_satt <- stars_cr2$df_Satt
+p_cr2 <- stars_cr2$p_Satt
+
+# CR2 95% confidence interval
+ci <- beta + c(-1, 1) *
+  qt(0.975, df = df_satt) * se
+
+# Compare standard-error estimators
+se_comparison <- tibble(
+  Method = c(
+    "Conventional OLS",
+    "HC3 robust",
+    "CR2 survey-clustered"
+  ),
+  Standard_error = c(
+    conventional_result["Std. Error"],
+    hc3_result["Std. Error"],
+    se
+  )
+)
+```
+
+In the primary survey-adjusted model, a one-point increase in mean STARS score was associated with an estimated 3.15-point decrease in converted attainment ($\beta=-3.152$, CR2 95% CI $[-4.890,-1.414]$, $p=0.0027$). The confidence interval excludes zero, providing evidence of a negative association even after allowing for within-survey dependence.
+
+The full regression explained approximately 28.4% of attainment variation ($R^2=0.284$). However, this includes variation explained by survey fixed effects and should not be attributed entirely to statistics anxiety. The partial $R^2$ for STARS was 0.0279, indicating that anxiety explained approximately 2.8% of the variation remaining after accounting for survey differences.
+
+Thus, although the association was statistically significant, its explanatory contribution was modest. Statistical significance should not be confused with educational importance, particularly given the relatively large sample.
+
+### Model diagnostics and sensitivity analyses
+
+Regression diagnostics were examined to assess whether the fitted model adequately described the data. The residual-versus-fitted plot suggested non-constant residual variance, with greater dispersion at lower fitted attainment values. The normal Q-Q plot also revealed departures from normality, particularly in the tails, indicating unusually large residuals.
+
+These findings motivated the comparison of conventional, HC3 and CR2 standard errors. The conventional standard error for STARS was 0.482, increasing slightly to 0.505 under HC3 and more substantially to 0.767 under CR2. The larger clustered standard error indicates that allowing for within-survey dependence materially affects the estimated precision of the coefficient. Nevertheless, the negative association remained statistically significant.
+
+CR2 inference was preferred because it addresses heteroscedasticity and possible within-survey dependence, with a small-sample adjustment appropriate to the limited number of surveys. However, it does not correct for potential non-linearity, influential observations or other model misspecification.
+
+
+```{r stats-regression-diagnostics, echo=FALSE, fig.width=9, fig.height=4, fig.cap="Diagnostic plots for the survey-adjusted regression: residuals versus fitted values (left) and normal Q-Q plot (right)."}
+# Save existing graphical settings
+old_par <- par(no.readonly = TRUE)
+
+# Arrange plots side by side
+par(
+  mfrow = c(1, 2),
+  mar = c(4.5, 4.5, 2.5, 1),
+  cex.axis = 0.85,
+  cex.lab = 0.9
+)
+
+# Residuals versus fitted values
+plot(
+  model_adjusted,
+  which = 1,
+  main = "Residuals vs Fitted",
+  sub.caption = "",
+  caption = "",
+  cex = 0.5,
+  id.n = 0
+)
+
+# Normal Q-Q plot
+plot(
+  model_adjusted,
+  which = 2,
+  main = "Normal Q-Q",
+  sub.caption = "",
+  caption = "",
+  cex = 0.5,
+  id.n = 0
+)
+
+# Restore graphical settings
+par(old_par)
+```
+
+
+To investigate whether our findings depended on analytical decisions, we conducted sensitivity analyses involving grade conversion, questionnaire completeness, correlation method and influential observations.
+
+```{r stats-sensitivity-analyses, include=FALSE}
+# Sensitivity 1: Numerical grades only
+numeric_data <- analysis_data %>%
+  filter(grade_method == "Numerical conversion")
+
+model_numeric <- lm(
+  grade_scaled ~ stars_mean + factor(survey_id),
+  data = numeric_data
+)
+
+# Sensitivity 2: Complete anxiety questionnaires
+complete_data <- smarvus_scored_complete
+
+model_complete <- lm(
+  grade_scaled ~ stars_mean + factor(survey_id),
+  data = complete_data
+)
+
+# Sensitivity 3: Spearman rank correlation
+spearman_result <- cor.test(
+  analysis_data$stars_mean,
+  analysis_data$grade_scaled,
+  method = "spearman",
+  exact = FALSE
+)
+
+# Sensitivity 4: Influence diagnostics
+cooks_d <- cooks.distance(model_adjusted)
+
+# Conventional screening threshold
+cooks_threshold <- 4 / nrow(analysis_data)
+
+# Number of potentially influential observations
+n_influential <- sum(
+  cooks_d > cooks_threshold
+)
+
+# Inspect the most influential observations
+influence_summary <- analysis_data %>%
+  mutate(
+    observation = row_number(),
+    cooks_d = cooks_d
+  ) %>%
+  arrange(desc(cooks_d)) %>%
+  select(
+    observation,
+    survey_id,
+    grade_scaled,
+    stars_mean,
+    cooks_d
+  ) %>%
+  slice_head(n = 10)
+
+# Retain Cook's distance plot as hidden exploration
+# (Not displayed in the final PDF)
+
+# Exclude flagged observations for sensitivity analysis only
+analysis_no_influential <- analysis_data[
+  cooks_d <= cooks_threshold,
+]
+
+model_no_influential <- lm(
+  grade_scaled ~ stars_mean + factor(survey_id),
+  data = analysis_no_influential
+)
+
+# Compare all survey-adjusted coefficients
+sensitivity_table <- tibble(
+  Analysis = c(
+    "Primary analysis",
+    "Numerical grades only",
+    "Complete questionnaires",
+    "Excluding Cook's D flagged observations"
+  ),
+  N = c(
+    nrow(analysis_data),
+    nrow(numeric_data),
+    nrow(complete_data),
+    nrow(analysis_no_influential)
+  ),
+  Coefficient = c(
+    unname(coef(model_adjusted)["stars_mean"]),
+    unname(coef(model_numeric)["stars_mean"]),
+    unname(coef(model_complete)["stars_mean"]),
+    unname(coef(model_no_influential)["stars_mean"])
+  )
+)
+```
+
+The results are summarised in Table 1. Restricting the sample to numerical grades or complete anxiety questionnaires produced estimates close to the primary coefficient, suggesting that the association was relatively insensitive to these inclusion decisions. Spearman's rank correlation was also negative ($\rho=-0.185$, $p<0.001$), indicating that the direction of the unadjusted relationship was not specific to Pearson's correlation.
+
+```{r stats-sensitivity-table, echo=FALSE}
+knitr::kable(
+  sensitivity_table,
+  digits = 3,
+  col.names = c(
+    "Analysis",
+    "N",
+    "STARS coefficient"
+  ),
+  caption = "Table 1. Sensitivity of the survey-adjusted STARS coefficient to alternative analytical decisions."
+)
+```
+
+Cook's distance identified 95 observations, approximately 6.3% of the primary sample, exceeding the conventional screening threshold of $4/N$. Excluding these observations reduced the coefficient from $-3.152$ to $-2.685$, a 14.8% reduction in absolute magnitude. Although the negative direction remained unchanged, the result indicates some sensitivity to influential observations.
+
+Importantly, Cook's distance identifies potentially influential observations rather than necessarily erroneous data. We therefore retained all participants in the primary analysis and treated this exclusion as exploratory.
+
+### Interpretation and limitations
+
+Overall, higher statistics anxiety was associated with lower academic attainment, including after adjustment for survey differences. The relationship remained negative under the analytical alternatives examined, although its estimated magnitude was somewhat sensitive to influential observations. The small partial $R^2$ indicates that statistics anxiety accounted for only a modest proportion of the variation in attainment beyond survey differences.
+
+Several limitations should be considered. Converting grades to a common 0--100 scale does not fully eliminate differences in grading standards or assessment difficulty across institutions. Survey fixed effects account for differences in baseline attainment but cannot address all individual-level confounding or guarantee that the converted grades are directly comparable.
+
+Furthermore, the final analysis included only participants with usable attainment records and sufficiently complete anxiety responses, representing a relatively small subset of the original dataset. If grade availability or questionnaire completion was associated with anxiety or attainment, selection bias may have influenced the results.
+
+The model also assumes a common linear relationship across surveys. Although CR2 inference provides more appropriate uncertainty estimates under heteroscedasticity and within-survey dependence, it does not eliminate possible model misspecification or measurement error.
+
+Finally, the observational nature of the data prevents causal conclusions. Higher anxiety might contribute to poorer attainment, poorer attainment might increase anxiety, or both could be influenced by other characteristics such as mathematical preparation, prior academic performance or educational experiences.
+
+Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
 
 
 
 
 
-
-
-
-
-
-### Statistical analysis and effect size
-
-*To be completed by Leah.*
 
 ### Mathematics anxiety comparison
 
