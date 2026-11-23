@@ -31,7 +31,7 @@ if (!file.exists(data_file)) {
 
 ### Introduction
 
-Statistics anxiety may present a barrier to students' academic attainment, although its relationship with mathematics anxiety remains unclear. Using the SMARVUS dataset (Terry et al., 2023), we investigate the association between statistics anxiety and attainment, accounting for differences between participating surveys. We also explore whether statistics anxiety provides additional explanatory power beyond mathematics anxiety and assess the robustness of our findings to alternative analytical decisions.
+Statistics anxiety may present a barrier to students' academic attainment, although its relationship with mathematics anxiety remains unclear. Using the SMARVUS dataset (Terry et al., 2023), which contains responses from 12,570 students across 35 countries, we investigate the association between statistics anxiety and statistics module attainment, accounting for differences between participating surveys. We also explore whether statistics anxiety provides additional explanatory power beyond mathematics anxiety and assess the robustness of our findings to alternative analytical decisions.
 
 ## Effect Size Summary
 
@@ -967,19 +967,6 @@ Cook's distance identified 95 observations, approximately 6.3% of the primary sa
 
 Importantly, Cook's distance identifies potentially influential observations rather than necessarily erroneous data. We therefore retained all participants in the primary analysis and treated this exclusion as exploratory.
 
-### Interpretation and limitations
-
-Overall, higher statistics anxiety was associated with lower academic attainment, including after adjustment for survey differences. The relationship remained negative under the analytical alternatives examined, although its estimated magnitude was somewhat sensitive to influential observations. The small partial $R^2$ indicates that statistics anxiety accounted for only a modest proportion of the variation in attainment beyond survey differences.
-
-Several limitations should be considered. Converting grades to a common 0--100 scale does not fully eliminate differences in grading standards or assessment difficulty across institutions. Survey fixed effects account for differences in baseline attainment but cannot address all individual-level confounding or guarantee that the converted grades are directly comparable.
-
-Furthermore, the final analysis included only participants with usable attainment records and sufficiently complete anxiety responses, representing a relatively small subset of the original dataset. If grade availability or questionnaire completion was associated with anxiety or attainment, selection bias may have influenced the results.
-
-The model also assumes a common linear relationship across surveys. Although CR2 inference provides more appropriate uncertainty estimates under heteroscedasticity and within-survey dependence, it does not eliminate possible model misspecification or measurement error.
-
-Finally, the observational nature of the data prevents causal conclusions. Higher anxiety might contribute to poorer attainment, poorer attainment might increase anxiety, or both could be influenced by other characteristics such as mathematical preparation, prior academic performance or educational experiences.
-
-Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
 
 ### Distinguishing statistics and mathematics anxiety
 
@@ -1310,18 +1297,26 @@ After accounting for survey differences, the correlations between statistics and
 
 ### Interpretation and limitations
 
-*To be completed together.*
+Overall, higher statistics anxiety was associated with lower academic attainment, including after adjustment for survey differences. The relationship remained negative under the analytical alternatives examined, although its estimated magnitude was somewhat sensitive to influential observations. The small partial $R^2$ indicates that statistics anxiety accounted for only a modest proportion of the variation in attainment beyond survey differences.
+
+The secondary analysis suggests that statistics anxiety provides additional explanatory information beyond mathematics anxiety, with consistent findings across both scale families. However, its incremental contribution to explained variance is modest, and direct coefficient comparisons provide insufficient evidence that statistics anxiety has a stronger association with attainment than mathematics anxiety.
+
+Several limitations should be considered. Converting grades to a common 0--100 scale does not fully eliminate differences in grading standards or assessment difficulty across institutions. Survey fixed effects account for differences in baseline attainment but cannot address all individual-level confounding or guarantee that the converted grades are directly comparable.
+
+Furthermore, the final analysis included only participants with usable attainment records and sufficiently complete anxiety responses, representing a relatively small subset of the original dataset. If grade availability or questionnaire completion was associated with anxiety or attainment, selection bias may have influenced the results.
+
+The model also assumes a common linear relationship across surveys. Although CR2 inference provides more appropriate uncertainty estimates under heteroscedasticity and within-survey dependence, it does not eliminate possible model misspecification or measurement error.
+
+The substantial overlap between anxiety measures also limits our ability to distinguish their individual associations with attainment. Furthermore, both scales may capture broader psychological constructs, such as general test anxiety, which were not explicitly accounted for in our models. Differences in questionnaire content and measurement reliability may also influence the estimated associations, complicating direct comparisons between the two constructs.
+
+Finally, the observational nature of the data prevents causal conclusions. Higher anxiety might contribute to poorer attainment, poorer attainment might increase anxiety, or both could be influenced by other characteristics such as mathematical preparation, prior academic performance or educational experiences.
+
+Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
 
 
+### Conclusion
 
-
-
-
-
-
-
-
-
+Higher statistics anxiety was associated with lower academic attainment, even after accounting for survey differences and mathematics anxiety. The negative association was robust to the alternative analytical decisions examined, although its explanatory contribution was modest. While statistics anxiety provided additional explanatory information, there was insufficient evidence that its association with attainment was stronger than that of mathematics anxiety. Given the observational nature of the data, these findings should be interpreted as associations rather than causal effects.
 
 
 
