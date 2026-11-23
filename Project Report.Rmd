@@ -3,10 +3,10 @@ title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
 output:
-  html_document:
-    df_print: paged
   pdf_document:
     latex_engine: xelatex
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -35,10 +35,7 @@ Statistics anxiety may present a barrier to students' academic attainment, altho
 
 ## Effect Size Summary
 
-*to be completed using our final analysis:*
-
-\(d = A, \ 95\%\ \mathrm{CI}\ [B,C]\), based on \(N = D\).
-
+\(d = -0.337,\ 95\%\ \mathrm{CI}\ [-0.440,-0.235]\), based on \(N = 1509\).
 
 ## Summary of the Analysis Approach
 
@@ -310,7 +307,7 @@ write_csv(exclusion_flow, "exclusion_flow.csv")
 
 ### Anxiety measures and scoring
 
-The next step is to construct reliable anxiety scores from the questionnaire results.The SMARVUS survey includes four anxiety scales, two measuring statistics anxiety and two measuring mathematics anxiety. The original instruments are the Statistics Anxiety Rating Scale (STARS; Q7.1_1–Q7.1_23, 23 questions) and the Revised Mathematics Anxiety Rating Scale (RMARS; Q8.2_1–Q8.2_24, 24 questions). Because these two scales differ slightly, STARS includes questions on fear of asking for help, whereas RMARS does not. The SMARVUS authors also created modified versions of each scale that swap the subject wording: a mathematics version of STARS (STARS-M; Q8.1_1–Q8.1_20, 20 questions) and a statistics version of RMARS (RMARS-S; Q7.2_1–Q7.2_23, 23 questions). Including all four scales allows us to test whether statistics anxiety and mathematics anxiety are genuinely distinct constructs or are testing the same thing.
+The next step is to construct reliable anxiety scores from the questionnaire results. The SMARVUS survey includes four anxiety scales, two measuring statistics anxiety and two measuring mathematics anxiety. The original instruments are the Statistics Anxiety Rating Scale (STARS; Q7.1_1–Q7.1_23, 23 questions) and the Revised Mathematics Anxiety Rating Scale (RMARS; Q8.2_1–Q8.2_24, 24 questions). Because these two scales differ slightly, STARS includes questions on fear of asking for help, whereas RMARS does not. The SMARVUS authors also created modified versions of each scale that swap the subject wording: a mathematics version of STARS (STARS-M; Q8.1_1–Q8.1_20, 20 questions) and a statistics version of RMARS (RMARS-S; Q7.2_1–Q7.2_23, 23 questions). Including all four scales allows us to test whether statistics anxiety and mathematics anxiety are genuinely distinct constructs or are testing the same thing.
 
 All items across the four scales are rated on a 1–5 scale, where 5 represents a high anxiety and 1 a low anxiety. Two of the attention-check items used in the previous section sit directly at the end of the STARS and STARS-M blocks (Q7.1_24 and Q8.1_21), so these were excluded when selecting the scale items.
 
@@ -573,11 +570,11 @@ The other limitation is that averaging all items on a questionnaire into a singl
 
 ### Analytical approach
 
-We examined the relationship between statistics anxiety and academic attainment using Pearson's correlation and linear regression. Statistics anxiety was measured using the mean Statistics Anxiety Rating Scale (STARS) score, ranging from 1 (low anxiety) to 5 (high anxiety), while attainment was measured using grades converted to a common 0--100 scale. The primary sample comprised 1,509 participants across 20 surveys who met the 80% completion threshold for all four anxiety measures, allowing subsequent comparisons with mathematics anxiety using a consistent sample.
+We examined the relationship between statistics anxiety and academic attainment using Pearson's correlation and linear regression. Statistics anxiety was measured using the mean STARS score (1–5), while attainment was measured using grades converted to a common 0–100 scale. The analysis included 1,509 participants across 20 surveys who met the 80% completion threshold for all four anxiety measures, ensuring a consistent sample for subsequent comparisons with mathematics anxiety.
 
-Pearson's correlation was used to quantify the unadjusted linear association. However, differences in grading standards, educational contexts and student populations could introduce systematic variation between surveys. We therefore fitted an initial unadjusted regression before introducing survey fixed effects. This allows each survey to have a different baseline attainment level while estimating a common within-survey association between STARS and attainment.
+Pearson's correlation quantified the unadjusted association, which we converted to an approximate Cohen's $d$ using $d=2r/\sqrt{1-r^2}$. Its 95% confidence interval was obtained by applying the same transformation to the correlation confidence interval endpoints. This effect size describes the unadjusted relationship.
 
-The regression coefficient quantifies the estimated attainment-point difference associated with a one-point increase in STARS, while partial $R^2$ measures the additional explanatory contribution of statistics anxiety beyond survey differences. Model diagnostics and sensitivity analyses were used to assess the reliability of our findings.
+We then fitted linear regression models with and without survey fixed effects to account for differences in baseline attainment between surveys. CR2 cluster-robust standard errors accounted for potential within-survey dependence. The regression coefficient represents the estimated change in attainment associated with a one-point increase in STARS, while partial $R^2$ measures its additional explanatory contribution beyond survey differences. Model diagnostics and sensitivity analyses assessed the robustness of our findings.
 
 ```{r stats-primary-analysis, include=FALSE}
 library(clubSandwich)
@@ -652,11 +649,32 @@ partial_r2 <- (r2_full - r2_reduced) /
   (1 - r2_reduced)
 ```
 
+```{r cohens-d-effect-size, echo=FALSE}
+# Convert Pearson's correlation to Cohen's d
+d_estimate <- effectsize::r_to_d(
+  r = stars_cor$estimate
+)
+
+# Convert the confidence interval endpoints
+d_ci <- effectsize::r_to_d(
+  r = stars_cor$conf.int[1:2]
+)
+
+# Display the results
+cat(sprintf(
+  "d = %.3f, 95%% CI [%.3f, %.3f], based on N = %d",
+  as.numeric(d_estimate),
+  d_ci[1],
+  d_ci[2],
+  nrow(analysis_data)
+))
+```
+
 ### Association between statistics anxiety and attainment
 
-The unadjusted relationship between statistics anxiety and academic attainment was negative but relatively weak (Pearson's $r=-0.166$, 95% CI $[-0.215,-0.117]$, $p<0.001$). As illustrated in Figure 1, higher anxiety scores were generally associated with lower grades, although substantial variation in attainment remained at each anxiety level. The correlation corresponded to $r^2=0.028$, indicating that approximately 2.8% of attainment variation was accounted for by the unadjusted linear relationship.
+The unadjusted relationship between statistics anxiety and attainment was weakly negative (Pearson's $r=-0.166$, 95% CI [$-0.215$, $-0.117$], $p<0.001$). Converting this correlation to an approximate Cohen's $d$ gave $d=-0.337$, 95% CI [$-0.440$, $-0.235$], based on 1,509 participants. This suggests a relatively small negative association between statistics anxiety and attainment. The correlation corresponds to $r^2=0.028$, indicating that approximately 2.8% of attainment variation was explained by the unadjusted linear relationship.
 
-```{r stats-anxiety-attainment-plot, echo=FALSE, message=FALSE, fig.width=6.5, fig.height=3.8, fig.cap="Figure 1. Unadjusted relationship between mean STARS score and converted academic attainment. The shaded band represents the 95% confidence interval for the fitted mean relationship."}
+```{r stats-anxiety-attainment-plot, echo=FALSE, message=FALSE, fig.width=6.5, fig.height=3.8, fig.cap="Unadjusted relationship between mean STARS score and converted academic attainment. The shaded band represents the 95% confidence interval for the fitted mean relationship."}
 ggplot(
   analysis_data,
   aes(x = stars_mean, y = grade_scaled)
@@ -688,9 +706,6 @@ ggplot(
   )
 ```
 
-An initial unadjusted regression estimated a 3.51-point decrease in converted attainment per one-point increase in STARS ($\beta=-3.514$). After introducing survey fixed effects, the coefficient decreased in absolute magnitude to $-3.152$, an attenuation of approximately 10%. This demonstrates that accounting for survey differences influenced the estimated relationship, although the negative association persisted.
-
-To assess uncertainty in the survey-adjusted estimate, we calculated CR2 survey-clustered standard errors with Satterthwaite-adjusted degrees of freedom. This approach allows for heteroscedasticity and potential dependence between participants from the same survey, which conventional regression standard errors do not accommodate.
 
 ```{r stats-robust-inference, include=FALSE}
 # Conventional inference
@@ -744,11 +759,11 @@ se_comparison <- tibble(
 )
 ```
 
-In the primary survey-adjusted model, a one-point increase in mean STARS score was associated with an estimated 3.15-point decrease in converted attainment ($\beta=-3.152$, CR2 95% CI $[-4.890,-1.414]$, $p=0.0027$). The confidence interval excludes zero, providing evidence of a negative association even after allowing for within-survey dependence.
+An unadjusted regression estimated a 3.51-percentage-point decrease in attainment per one-point increase in mean STARS score ($\beta=-3.514$). After introducing survey fixed effects, this decreased in magnitude to $\beta=-3.152$, suggesting that differences between surveys influenced the estimated association.
 
-The full regression explained approximately 28.4% of attainment variation ($R^2=0.284$). However, this includes variation explained by survey fixed effects and should not be attributed entirely to statistics anxiety. The partial $R^2$ for STARS was 0.0279, indicating that anxiety explained approximately 2.8% of the variation remaining after accounting for survey differences.
+Using CR2 cluster-robust standard errors with Satterthwaite-adjusted degrees of freedom, the survey-adjusted coefficient remained statistically significant (95% CI [$-4.890$, $-1.414$], $p=0.0027$). This approach accounts for heteroscedasticity and potential dependence between participants within the same survey.
 
-Thus, although the association was statistically significant, its explanatory contribution was modest. Statistical significance should not be confused with educational importance, particularly given the relatively large sample.
+The survey-adjusted model explained 28.4% of attainment variation ($R^2=0.284$), although this includes variation explained by survey effects. The partial $R^2$ for STARS was 0.0279, indicating that statistics anxiety explained approximately 2.8% of the remaining variation after accounting for survey differences. Thus, while the negative association was statistically significant, its explanatory contribution was modest.
 
 ### Model diagnostics and sensitivity analyses
 
@@ -889,7 +904,7 @@ sensitivity_table <- tibble(
 )
 ```
 
-The results are summarised in Table 1. Restricting the sample to numerical grades or complete anxiety questionnaires produced estimates close to the primary coefficient, suggesting that the association was relatively insensitive to these inclusion decisions. Spearman's rank correlation was also negative ($\rho=-0.185$, $p<0.001$), indicating that the direction of the unadjusted relationship was not specific to Pearson's correlation.
+The results are summarised in Table 3. Restricting the sample to numerical grades or complete anxiety questionnaires produced estimates close to the primary coefficient, suggesting that the association was relatively insensitive to these inclusion decisions. Spearman's rank correlation was also negative ($\rho=-0.185$, $p<0.001$), indicating that the direction of the unadjusted relationship was not specific to Pearson's correlation.
 
 ```{r stats-sensitivity-table, echo=FALSE}
 knitr::kable(
@@ -900,7 +915,7 @@ knitr::kable(
     "N",
     "STARS coefficient"
   ),
-  caption = "Table 1. Sensitivity of the survey-adjusted STARS coefficient to alternative analytical decisions."
+  caption = "Sensitivity of the survey-adjusted STARS coefficient to alternative analytical decisions."
 )
 ```
 
@@ -911,7 +926,7 @@ Importantly, Cook's distance identifies potentially influential observations rat
 
 ## Distinguishing statistics and mathematics anxiety
 
-Although our primary analysis focuses on statistics anxiety, mathematics anxiety may also be associated with statistics attainment. Terry et al. (2023) highlight the possibility of a jangle fallacy, whereby differently named scales are incorrectly assumed to measure distinct psychological constructs. We therefore investigate whether statistics anxiety provides additional explanatory power beyond mathematics anxiety, using both the original and modified anxiety scales.
+The primary analysis identified a modest negative association between statistics anxiety and attainment. However, mathematics anxiety may also contribute to this relationship. Terry et al. (2023) highlight the possibility of a *jangle fallacy*, whereby differently named scales are incorrectly assumed to measure distinct psychological constructs. We therefore investigate whether statistics anxiety provides additional explanatory power beyond mathematics anxiety, using both the original and modified anxiety scales.
 
 #### Correlations between anxiety measures
 
@@ -1075,11 +1090,9 @@ ggplot(coefficient_data,
   theme(legend.position = "bottom")
 ```
 
-As shown in Figure 3, all four anxiety measures were negatively associated with attainment when considered separately, with estimated coefficients ranging from −3.15 to −2.73 attainment points per one-point increase in anxiety.
+As shown in Figure 3, all four anxiety measures were negatively associated with attainment when modelled separately, with coefficients ranging from $-3.15$ to $-2.73$. After adjusting for mathematics anxiety, the statistics anxiety coefficients remained negative, at $-2.86$ for STARS and $-2.18$ for R-MARS-S, with both 95% confidence intervals excluding zero. In contrast, the mathematics anxiety coefficients moved towards zero, with confidence intervals including zero.
 
-After including both anxiety measures within each scale family, the statistics anxiety coefficients remained negative, at $-2.86$ for STARS and $-2.18$ for R-MARS-S, with both confidence intervals excluding zero. In contrast, the mathematics anxiety coefficients attenuated towards zero, with confidence intervals including zero.
-
-These findings suggest that statistics anxiety retains an association with attainment after accounting for mathematics anxiety.
+These findings suggest that statistics anxiety retains a negative association with attainment after accounting for mathematics anxiety, although this does not necessarily imply that its association is stronger.
 
 #### Comparison of explained variance
 
@@ -1238,26 +1251,21 @@ After accounting for survey differences, the correlations between statistics and
 
 ### Interpretation and limitations
 
-Overall, higher statistics anxiety was associated with lower academic attainment, including after adjustment for survey differences. The relationship remained negative under the analytical alternatives examined, although its estimated magnitude was somewhat sensitive to influential observations. The small partial $R^2$ indicates that statistics anxiety accounted for only a modest proportion of the variation in attainment beyond survey differences.
+### Interpretation and limitations
 
-The secondary analysis suggests that statistics anxiety provides additional explanatory information beyond mathematics anxiety, with consistent findings across both scale families. However, its incremental contribution to explained variance is modest, and direct coefficient comparisons provide insufficient evidence that statistics anxiety has a stronger association with attainment than mathematics anxiety.
+Overall, higher statistics anxiety was associated with lower academic attainment, even after accounting for differences between surveys. This negative association was broadly consistent across sensitivity analyses, although its magnitude was somewhat sensitive to influential observations. The modest partial $R^2$ suggests that statistics anxiety explains only a small proportion of attainment variation beyond survey differences.
 
-Several limitations should be considered. Converting grades to a common 0--100 scale does not fully eliminate differences in grading standards or assessment difficulty across institutions. Survey fixed effects account for differences in baseline attainment but cannot address all individual-level confounding or guarantee that the converted grades are directly comparable.
+Our secondary analysis found that statistics anxiety provided additional explanatory information beyond mathematics anxiety. However, the incremental explained variance was small, and direct coefficient comparisons did not establish that statistics anxiety had a stronger association with attainment. The substantial overlap between anxiety measures also limits our ability to distinguish their individual contributions.
 
-Furthermore, the final analysis included only participants with usable attainment records and sufficiently complete anxiety responses, representing a relatively small subset of the original dataset. If grade availability or questionnaire completion was associated with anxiety or attainment, selection bias may have influenced the results.
+Several limitations should be considered. Converting grades to a common scale does not fully account for differences in grading standards or assessment difficulty across institutions. Furthermore, only a relatively small subset of the original SMARVUS sample had usable attainment and anxiety data, introducing potential selection bias. Differences in questionnaire content and reliability may also affect comparisons between anxiety measures.
 
-The model also assumes a common linear relationship across surveys. Although CR2 inference provides more appropriate uncertainty estimates under heteroscedasticity and within-survey dependence, it does not eliminate possible model misspecification or measurement error.
+Although CR2 cluster-robust inference accounts for potential within-survey dependence and heteroscedasticity, it does not address all possible model misspecification or unmeasured confounding. In particular, factors such as prior mathematical attainment, self-efficacy and general test anxiety were not included in our models.
 
-The substantial overlap between anxiety measures also limits our ability to distinguish their individual associations with attainment. Furthermore, both scales may capture broader psychological constructs, such as general test anxiety, which were not explicitly accounted for in our models. Differences in questionnaire content and measurement reliability may also influence the estimated associations, complicating direct comparisons between the two constructs.
-
-Finally, the observational nature of the data prevents causal conclusions. Higher anxiety might contribute to poorer attainment, poorer attainment might increase anxiety, or both could be influenced by other characteristics such as mathematical preparation, prior academic performance or educational experiences.
-
-Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
-
+Finally, the observational nature of the data prevents causal conclusions. Higher anxiety may contribute to poorer attainment, poorer attainment may increase anxiety, or both may be influenced by other factors. Our findings therefore provide evidence of a modest negative association, rather than demonstrating that statistics anxiety directly causes lower grades.
 
 ## Conclusion
 
-Higher statistics anxiety was associated with lower academic attainment, even after accounting for survey differences and mathematics anxiety. The negative association was robust to the alternative analytical decisions examined, although its explanatory contribution was modest. While statistics anxiety provided additional explanatory information, there was insufficient evidence that its association with attainment was stronger than that of mathematics anxiety. Given the observational nature of the data, these findings should be interpreted as associations rather than causal effects.
+Higher statistics anxiety was associated with lower academic attainment, even after accounting for survey differences and mathematics anxiety. Although this association remained negative across the alternative analyses examined, its explanatory contribution was modest. Statistics anxiety provided some additional explanatory information beyond mathematics anxiety, but there was insufficient evidence that its association with attainment was stronger. Overall, these findings suggest a modest negative relationship between statistics anxiety and attainment, without establishing causality.
 
 
 ## Appendix: R code
