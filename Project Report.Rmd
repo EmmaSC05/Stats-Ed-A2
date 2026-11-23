@@ -42,7 +42,7 @@ Statistics anxiety may present a barrier to students' academic attainment, altho
 
 ## Summary of the Analysis Approach
 
-We chose an individual-level analysis rather than a meta-analysis because the shared SMARVUS dataset allowed us to retain participant-level information and account for differences between participating surveys. Grades were standardised to a 0–100 scale, and participants failing attention checks or answering under 80% of any anxiety scale were excluded ($N = 1,509$). Survey-adjusted regression was used to investigate the association between anxiety and attainment, with cluster-robust inference accounting for within-survey dependence. Sensitivity analyses examined how analytical decisions influenced the findings.
+We used individual-level SMARVUS data, standardising academic attainment across grading systems and constructing anxiety scores from established questionnaires. Linear regression with survey fixed effects and CR2 cluster-robust confidence intervals was used to investigate the association between statistics anxiety and attainment. Model diagnostics and sensitivity analyses assessed the robustness of the findings to alternative analytical decisions. As a secondary analysis, we compared statistics and mathematics anxiety using correlations, separate and joint regression models, and changes in explained variance to investigate whether statistics anxiety provided additional explanatory information.
 
 
 ## Details of the Analysis
@@ -909,7 +909,7 @@ Cook's distance identified 95 observations, approximately 6.3% of the primary sa
 Importantly, Cook's distance identifies potentially influential observations rather than necessarily erroneous data. We therefore retained all participants in the primary analysis and treated this exclusion as exploratory.
 
 
-### Distinguishing statistics and mathematics anxiety
+## Distinguishing statistics and mathematics anxiety
 
 Although our primary analysis focuses on statistics anxiety, mathematics anxiety may also be associated with statistics attainment. Terry et al. (2023) highlight the possibility of a jangle fallacy, whereby differently named scales are incorrectly assumed to measure distinct psychological constructs. We therefore investigate whether statistics anxiety provides additional explanatory power beyond mathematics anxiety, using both the original and modified anxiety scales.
 
@@ -1255,7 +1255,7 @@ Finally, the observational nature of the data prevents causal conclusions. Highe
 Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
 
 
-### Conclusion
+## Conclusion
 
 Higher statistics anxiety was associated with lower academic attainment, even after accounting for survey differences and mathematics anxiety. The negative association was robust to the alternative analytical decisions examined, although its explanatory contribution was modest. While statistics anxiety provided additional explanatory information, there was insufficient evidence that its association with attainment was stronger than that of mathematics anxiety. Given the observational nature of the data, these findings should be interpreted as associations rather than causal effects.
 
