@@ -3,10 +3,10 @@ title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
 output:
-  pdf_document:
-    latex_engine: xelatex
   html_document:
     df_print: paged
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +29,7 @@ if (!file.exists(data_file)) {
 }
 ```
 
-### Introduction
+## Introduction
 
 Statistics anxiety may present a barrier to students' academic attainment, although its relationship with mathematics anxiety remains unclear. Using the SMARVUS dataset (Terry et al., 2023), which contains responses from 12,570 students across 35 countries, we investigate the association between statistics anxiety and statistics module attainment, accounting for differences between participating surveys. We also explore whether statistics anxiety provides additional explanatory power beyond mathematics anxiety and assess the robustness of our findings to alternative analytical decisions.
 
@@ -42,12 +42,7 @@ Statistics anxiety may present a barrier to students' academic attainment, altho
 
 ## Summary of the Analysis Approach
 
-*to be completed together after choosing the primary analysis (max 100 words)*
-
-We chose an individual-level analysis rather than a meta-analysis because all observations originated from a shared dataset, allowing us to retain participant-level information and account for institutional differences directly, without relying on potentially unstable effect-size estimates from institutions with small sample sizes. *!!! WE NEED TO MAKE SURE OUR FINAL ANALYSIS ACTUALLY ACCOUNTS FOR INSTITUTIONAL DIFFERENCES !!!!*
-
-*!!!!!! adjusted the summary above to include further analysis completed !!!!!!*
-We chose an individual-level analysis rather than a meta-analysis because the shared SMARVUS dataset allowed us to retain participant-level information and account for differences between participating surveys. Academic attainment was converted to a common scale, and anxiety scores were calculated using established questionnaire measures. Survey-adjusted regression was used to investigate the association between anxiety and attainment, with cluster-robust inference accounting for within-survey dependence. Sensitivity analyses examined how analytical decisions influenced the findings.
+We chose an individual-level analysis rather than a meta-analysis because the shared SMARVUS dataset allowed us to retain participant-level information and account for differences between participating surveys. Grades were standardised to a 0–100 scale, and participants failing attention checks or answering under 80% of any anxiety scale were excluded ($N = 1,509$). Survey-adjusted regression was used to investigate the association between anxiety and attainment, with cluster-robust inference accounting for within-survey dependence. Sensitivity analyses examined how analytical decisions influenced the findings.
 
 
 ## Details of the Analysis
@@ -56,7 +51,7 @@ We chose an individual-level analysis rather than a meta-analysis because the sh
 
 #### Initial Inspection and Grade Availability
 
-The SMARVUS dataset contained 12,570 observations and 788 variables. We checked for identical rows and missing or duplicated participant identifiers ('unique_id'); none were found. Missing reponses were investigated with reference to the variables required for this analysis rather than excluding participants with missing entries in other places of the questionnaire. Statistics attainment was recorded in 'grade', with 1820 participants having a grade entry other than 'NA' or '"Not Available"'.
+The SMARVUS dataset contained 12,570 observations and 788 variables. We checked for identical rows and missing or duplicated participant identifiers ('unique_id'); none were found. Missing responses were investigated with reference to the variables required for this analysis rather than excluding participants with missing entries in other places of the questionnaire. Statistics attainment was recorded in 'grade', with 1820 participants having a grade entry other than 'NA' or 'Not Available'.
 
 ```{r initial data inspection, include=FALSE}
 
@@ -83,16 +78,16 @@ smarvus_grades <- smarvus_raw %>%
 nrow(smarvus_grades)
 ```
 
-#### Standarising Attainment Across Institutions
+#### Standardising Attainment Across Institutions
 
 
-Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institutions lowest and highest documented grades before we constructed a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
+Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institution's lowest and highest documented grades before we constructed a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
 
 \[
 \text{Scaled grade} = 100\,\frac{\text{Observed grade} - \text{Lowest possible grade}}{\text{Highest possible grade} - \text{Lowest possible grade}}.
 \]
 
-To keep observations that used letter grades, we used the midpoint of the applicable institution-specific percentage band as an *estimated* numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values outside continuous-attainment datasets. This left us with 1362 converted numerical grades and 320 estimated letter grades (1662 observations in total). Grade-band midpoints are approximations, and it is important to note than converting to a common range does not remove the differences in grading standards across different institutions.
+To keep observations that used letter grades, we used the midpoint of the applicable institution-specific percentage band as an estimated numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values outside continuous-attainment datasets were excluded. This left us with 1362 converted numerical grades and 320 estimated letter grades (1682 observations in total). Grade-band midpoints are approximations, and it is important to note that converting to a common range does not remove the differences in grading standards across different institutions.
 
 
 
@@ -219,7 +214,7 @@ smarvus_prepared %>%
 #### Attention Checks and Exclusion Criteria
 
 
-We assessed response quality using the six attention check items and the 'attention_amnesty' response. Participants were excluded if they answered at least one administered check incorrectly or explicitly selected '"No"' to the amnesty question. Missing check or amnesty responses were **not** interpreted as failures as the questions were not necessarily recorded for every survey. Under these rules, 1542 participants remained after attainment and quality screening. This is the *data-preparation sample*, not necessarily the final analysis sample: the anxiety-scale completeness criteria will be applied subsequently.
+We assessed response quality using the six attention check items and the 'attention_amnesty' response. Participants were excluded if they answered at least one administered check incorrectly or explicitly selected 'No' to the amnesty question. Missing check or amnesty responses were not interpreted as failures as the questions were not necessarily recorded for every survey. Under these rules, 1542 participants remained after attainment and quality screening. Anxiety-scale completeness criteria are applied in the next section.
 
 ```{r attention-checks, include=FALSE}
 # Attention check variables
@@ -271,7 +266,7 @@ smarvus_clean <- amnesty_passed %>%
   filter(n_checks_failed == 0)
 ```
 
-The participant counts at each stage are summarised in the table below. Of the 1542 kept observations, 165 had no recorded attention check answers and 70 had a missing amnesty response. So, the conclusions should be checked for the sensitivity to the treatment of missing quality information. Results could also depend on if the estimated letter grades are included.
+The participant counts at each stage are summarised in the table below. Of the 1542 kept observations, 165 had no recorded attention check answers and 70 had a missing amnesty response. Because estimated letter grades are approximations, we also test whether excluding them affects our findings in the sensitivity analyses below.
 
 ```{r exclusion-table, echo=FALSE}
 exclusion_flow <- tibble(
@@ -315,12 +310,12 @@ write_csv(exclusion_flow, "exclusion_flow.csv")
 
 ### Anxiety measures and scoring
 
-Following the attainment standardisation and quality screening above, we are left with $N = 1,542$. The next step is to construct reliable anxiety scores from the questionnaire results in this dataset.The SMARVUS survey includes four anxiety scales, two measuring statistics anxiety and two measuring mathematics anxiety. The original instruments are the Statistics Anxiety Rating Scale (STARS; Q7.1_1–Q7.1_23, 23 questions) and the Revised Mathematics Anxiety Rating Scale (RMARS; Q8.2_1–Q8.2_24, 24 questions). Because these two scales differ slightly, STARS includes questions on fear of asking for help, whereas RMARS does not. The SMARVUS authors also created modified versions of each scale that swap the subject wording: a mathematics version of STARS (STARS-M; Q8.1_1–Q8.1_20, 20 questions) and a statistics version of RMARS (RMARS-S; Q7.2_1–Q7.2_23, 23 questions). Including all four scales allows us to test whether statistics anxiety and mathematics anxiety are genuinely distinct constructs or are testing the same thing.
+The next step is to construct reliable anxiety scores from the questionnaire results.The SMARVUS survey includes four anxiety scales, two measuring statistics anxiety and two measuring mathematics anxiety. The original instruments are the Statistics Anxiety Rating Scale (STARS; Q7.1_1–Q7.1_23, 23 questions) and the Revised Mathematics Anxiety Rating Scale (RMARS; Q8.2_1–Q8.2_24, 24 questions). Because these two scales differ slightly, STARS includes questions on fear of asking for help, whereas RMARS does not. The SMARVUS authors also created modified versions of each scale that swap the subject wording: a mathematics version of STARS (STARS-M; Q8.1_1–Q8.1_20, 20 questions) and a statistics version of RMARS (RMARS-S; Q7.2_1–Q7.2_23, 23 questions). Including all four scales allows us to test whether statistics anxiety and mathematics anxiety are genuinely distinct constructs or are testing the same thing.
 
-All items across the four scales are rated on a 1–5 scale, where 5 represents a high enxiety and 1 a low anxiety. Two of the attention-check items used in the previous section sit directly at the end of the STARS and STARS-M blocks (Q7.1_24 and Q8.1_21), so these were excluded when selecting the scale items.
+All items across the four scales are rated on a 1–5 scale, where 5 represents a high anxiety and 1 a low anxiety. Two of the attention-check items used in the previous section sit directly at the end of the STARS and STARS-M blocks (Q7.1_24 and Q8.1_21), so these were excluded when selecting the scale items.
 
 
-##### Investigating Missing Entries
+#### Investigating Missing Entries
 
 Before calculating any scores, we checked that all observed responses fell within the expected 1–5 range and inspected how many NAs are present on each scale.
 
@@ -450,13 +445,10 @@ Further investigation by institution showed that this spike came from Erasmus Un
 
 Because the four scales differ in length (20, 23, and 24), we scored each scale using the mean item score rather than a raw sum score. Taking the mean places all four anxiety measures on the same 1–5 scale so they can be compared directly, and prevents students with a small number of omitted items from receiving artificially low scores.
 
-*note - not sure whether to remove all participants with missing entries for the 4 tests, or just ones where a large amount are missing*
-
-Applying an 80% threshold retains Rotterdam (who completed 82.6% of RMARS-S and 83.3% of RMARS) as well as the handful of students who skipped one or two items, while still excluding anyone who missed an entire scale or large blocks of questions.
+To handle partial missingness, we applied an 80% completion threshold (requiring at least 19 of 23 items on STARS and RMARS-S, 16 of 20 on STARS-M, and 20 of 24 on RMARS) and retained participants who met this threshold on all four scales so that the primary and secondary analyses use the same sample. This rule retains the Erasmus University Rotterdam cohort (who completed 82.6% of RMARS-S and 83.3% of RMARS) as well as the handful of students who skipped one or two items, while still excluding anyone who missed an entire scale or large blocks of questions. As a stricter alternative, requiring 100% item completion avoids making any assumptions about omitted questions but excludes participants for items they were never administered. We therefore also constructed a complete-case scored dataset to test whether this scoring choice affects our results in the sensitivity analyses.
 
 Below, we calculate the anxiety scores and descriptive statistics. 
 
-#### Option 1:
 
 ```{r score-option-1, include=FALSE}
 # Compute mean scores using the 80% completion threshold
@@ -507,25 +499,9 @@ n_excluded_80 <- n_clean - n_scored_80
 
 ```
 
-Applying the 80% threshold across all four scales excludes 33 participants, leaving 1509 participants for analysis. The descriptive statistics for each scale under this rule are summarised below.
-
-
-```{r desc-table-option-a, echo=FALSE}
-knitr::kable(
-  desc_option_1,
-  col.names = c("Scale", "Valid (N)", "Missing (N)", "Missing (%)", "Mean", "SD", "Min", "Max"),
-  caption = "Descriptive statistics for the four anxiety scales under the 80% completion threshold (evaluated on N = 1,542)."
-)
-```
-
-###### Option B: Complete-Case Scoring *(Group: delete Option before submission)*
-
-Under this stricter rule, a participant only receives a score on a scale if they answered every item on that scale, and only participants with complete responses across all four scales are retained.
-
-
-```{r score-option-b, include=FALSE}
-# Compute mean scores ONLY when 100% of items are answered (0 missing)
-smarvus_scores_complete_all <- smarvus_clean %>%
+```{r score-complete-sensitivity, include=FALSE}
+# Construct strict 100% complete-case dataset for sensitivity analysis
+smarvus_scored_complete <- smarvus_clean %>%
   mutate(
     stars_n   = rowSums(!is.na(select(., Q7.1_1:Q7.1_23))),
     rmars_s_n = rowSums(!is.na(select(., Q7.2_1:Q7.2_23))),
@@ -536,51 +512,24 @@ smarvus_scores_complete_all <- smarvus_clean %>%
     rmars_s_mean = if_else(rmars_s_n == 23, rowMeans(select(., Q7.2_1:Q7.2_23)), NA_real_),
     stars_m_mean = if_else(stars_m_n == 20, rowMeans(select(., Q8.1_1:Q8.1_20)), NA_real_),
     rmars_mean   = if_else(rmars_n   == 24, rowMeans(select(., Q8.2_1:Q8.2_24)), NA_real_)
-  )
-
-desc_option_2 <- smarvus_scores_complete_all %>%
-  select(stars_mean, rmars_s_mean, stars_m_mean, rmars_mean) %>%
-  pivot_longer(everything(), names_to = "Scale", values_to = "Score") %>%
-  mutate(
-    Scale = recode(
-      Scale,
-      stars_mean   = "STARS",
-      rmars_s_mean = "RMARS-S)",
-      stars_m_mean = "STARS-M",
-      rmars_mean   = "RMARS"
-    )
   ) %>%
-  group_by(Scale) %>%
-  summarise(
-    Valid_N     = sum(!is.na(Score)),
-    Missing_N   = sum(is.na(Score)),
-    Missing_Pct = round(mean(is.na(Score)) * 100, 1),
-    Mean        = round(mean(Score, na.rm = TRUE), 2),
-    SD          = round(sd(Score, na.rm = TRUE), 2),
-    Min         = round(min(Score, na.rm = TRUE), 2),
-    Max         = round(max(Score, na.rm = TRUE), 2),
-    .groups = "drop"
-  )
-
-smarvus_scored_complete <- smarvus_scores_complete_all %>%
   filter(!is.na(stars_mean), !is.na(rmars_s_mean), !is.na(stars_m_mean), !is.na(rmars_mean))
 
 n_scored_complete   <- nrow(smarvus_scored_complete)
 n_excluded_complete <- n_clean - n_scored_complete
-
-
 ```
 
-Requiring complete responses across all four scales excludes 130 participants, leaving 1412 for analysis.
+Applying the 80% threshold across all four scales excludes 33 participants, leaving 1509 participants for the primary analysis (compared with 1412 under complete-case scoring, which excludes 130 participants). The descriptive statistics for each scale under the 80% rule are summarised below.
 
 
-```{r desc-table-option-b, echo=FALSE}
+```{r desc-table-option-a, echo=FALSE}
 knitr::kable(
-  desc_option_2,
+  desc_option_1,
   col.names = c("Scale", "Valid (N)", "Missing (N)", "Missing (%)", "Mean", "SD", "Min", "Max"),
-  caption = "Descriptive statistics for the four anxiety scales under strict complete-case scoring (evaluated on N = 1,542)."
+  caption = "Descriptive statistics for the four anxiety scales under the 80% completion threshold (evaluated on N = 1,542)."
 )
 ```
+
 
 To check the shape of the four anxiety measures—and look for any skewness, outliers, or clustering at the extremes of the 1–5 scale, we plotted histograms of the scored variables.
 
@@ -613,19 +562,11 @@ smarvus_scored_80 %>%
 
 All four anxiety scales show roughly symmetric, bell-shaped distributions centered near the midpoint of 3, with RMARS-S centered slightly higher than the other three measures. Scores are well spread across the 1–5 range with no obvious skewness, outliers, or clustering at the floor or ceiling of the scale. This indicates that all four composite scores are well-behaved and suitable for analysis.
 
-##### Scoring Limitations
+#### Scoring Limitations
 
-There are a few limitations when interpreting these anxiety scores. If keeps the 80% completion threshold, scores for RMARS-S and RMARS are averaged over 19 and 20 items rather than 23 and 24. Averaging over answered items implicitly assumes that the omitted questions would have had the same average anxiety rating as the rest of the scale; if those final four items tended higher or lower anxiety, scores for that cohort could be slightly shifted. Using fewer items can also slightly reduce measurement precision, which in turn can attenuate standardised effect sizes (Simpson, 2017). Conversely, requiring 100% complete responses avoids this assumption at the cost of losing an entire institution from the sample. 
+There are two main limitations when interpreting these anxiety scores. Under the 80% completion threshold, scores for Erasmus University Rotterdam on RMARS-S and RMARS are averaged over 19 and 20 questions rather than 23 and 24. Averaging over answered questions assumes that the omitted questions would have had the same average anxiety rating as the rest of the scale. If those four answers tended to reflect higher or lower anxiety, scores for that cohort could be slightly shifted. Using fewer questions can also slightly reduce measurement precision. As shown in the sensitivity analyses below, however, repeating the primary regression on the complete-case sample produces an almost identical estimate.
 
-Averaging all items on a questionnaire into a single overall score treats each type of anxiety as one uniform trait. In reality, both STARS and RMARS cover several distinct areas—such as test anxiety and fear of asking for help—and combining them into one mean could hide differences in how each aspect relates to attainment
-
-
-*****We went with the 80% completion threshold mainly because of the missingness pattern at Erasmus University Rotterdam. Around 75 participants were missing the final four RMARS-S and RMARS questions, which appeared not to have been administered there. Requiring 100% completion would therefore exclude participants for missing questions they weren't actually given.
-
-Using 80% completion retained 1,509 participants compared with 1,412 under complete-case scoring. We also ran a sensitivity analysis using the 100% version, and the survey-adjusted STARS coefficients were almost identical (−3.152 versus −3.177).
-
-So we chose 80% because it retained more usable data, avoided unnecessary exclusions and didn't materially change our findings. The trade-off is that partially completed scales are averaged over fewer items. ******
-
+The other limitation is that averaging all items on a questionnaire into a single overall score treats each type of anxiety as one uniform trait. Both STARS and RMARS cover distinct fears such as test anxiety and fear of asking for help, and combining them into one mean could hide differences in how each aspect relates to attainment.
 
 
 ## Statistical analysis and effect size
@@ -1317,33 +1258,6 @@ Consequently, our analysis provides evidence of a statistically significant but 
 ### Conclusion
 
 Higher statistics anxiety was associated with lower academic attainment, even after accounting for survey differences and mathematics anxiety. The negative association was robust to the alternative analytical decisions examined, although its explanatory contribution was modest. While statistics anxiety provided additional explanatory information, there was insufficient evidence that its association with attainment was stronger than that of mathematics anxiety. Given the observational nature of the data, these findings should be interpreted as associations rather than causal effects.
-
-
-
-
-RMARS is revised mathematics anxiety rating scale (NORMAL MATHS ANXIETY ONE) Q8.2_1 to Q8.2_24
-RMARS-S is like RMARS but replaces the maths with stats Q7.2_1 to Q7.2_23
-STARS is statistics anxiety rating scale (NORMAL STATS ANXIETY ONE) Q7.1_1 to Q7.1_23
-STARS-M is a modified version of STARS but replaces the stats with maths Q8.1_1 to Q8.1_20
-
-
-## Effect size summary
-
-Simply state:
-
-d = A, 95% CI [B, C] based on N = D.
-
-where A, B, C are replaced with the values that you have found using data from D participants.
-
-## Summary of the analysis approach
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-Give a short summary of your approach, specifying the type of analysis you used and any other important choices you made (e.g., about which data to include/exclude).
-
-## Details of the analysis
-
-This is the main body of the report, which should make clear how you arrived at the values quoted in the first section. This should be in a similar style to the lecture notes for this course, with a mix of text, R code, and output generated by the code. It may be helpful to think of the intended audience as a classmate who has not yet engaged with the project – you can assume a good level of statistical background knowledge, but you will need to give a concise explanation of the important features of the dataset and your specific analysis choices. There is no specific page limit, since it will depend on the amount of code and plots included, but should be unlikely to need more than 6 pages.
 
 
 ## Appendix: R code
