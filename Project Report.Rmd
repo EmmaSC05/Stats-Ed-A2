@@ -3,7 +3,8 @@ title: "Statistics Anxiety and Academic Attainment"
 author: "Emma Crawford, Alice Miller, Leah Cookson, Alexandra Anderson"
 date: "2026-11-19"
 output:
-  pdf_document: default
+  pdf_document:
+    latex_engine: xelatex
   html_document:
     df_print: paged
 ---
@@ -27,6 +28,10 @@ if (!file.exists(data_file)) {
   smarvus_raw <- read_csv(data_file)
 }
 ```
+
+### Introduction
+
+Statistics anxiety may present a barrier to students' academic attainment, although its relationship with mathematics anxiety remains unclear. Using the SMARVUS dataset (Terry et al., 2023), we investigate the association between statistics anxiety and attainment, accounting for differences between participating surveys. We also explore whether statistics anxiety provides additional explanatory power beyond mathematics anxiety and assess the robustness of our findings to alternative analytical decisions.
 
 ## Effect Size Summary
 
@@ -600,7 +605,7 @@ smarvus_scored_80 %>%
   facet_wrap(~ Scale) +
   labs(
     title = "Distribution of Mean Anxiety Scores Across the Four Scales",
-    x = "Mean Score (1–5)",
+    x = "Mean Score (1-5)",
     y = "Number of Participants"
   ) +
   theme_minimal()
@@ -976,14 +981,332 @@ Finally, the observational nature of the data prevents causal conclusions. Highe
 
 Consequently, our analysis provides evidence of a statistically significant but modest negative association between statistics anxiety and academic attainment, rather than demonstrating that statistics anxiety directly causes lower grades.
 
+### Distinguishing statistics and mathematics anxiety
 
+Although our primary analysis focuses on statistics anxiety, mathematics anxiety may also be associated with statistics attainment. Terry et al. (2023) highlight the possibility of a jangle fallacy, whereby differently named scales are incorrectly assumed to measure distinct psychological constructs. We therefore investigate whether statistics anxiety provides additional explanatory power beyond mathematics anxiety, using both the original and modified anxiety scales.
 
+#### Correlations between anxiety measures
 
+```{r maths-anxiety-correlations, echo=FALSE}
+anxiety_cor <- analysis_data %>%
+  select(
+    STARS = stars_mean,
+    `R-MARS-S` = rmars_s_mean,
+    `STARS-M` = stars_m_mean,
+    `R-MARS` = rmars_mean
+  ) %>%
+  cor(method = "pearson")
 
+knitr::kable(
+  round(anxiety_cor, 3),
+  caption = "Pearson correlations between the four anxiety measures."
+)
+```
 
-### Mathematics anxiety comparison
+All four anxiety measures exhibit strong positive correlations, ranging from 0.760 to 0.865. This suggests substantial overlap between statistics and mathematics anxiety, although high correlations alone are insufficient to establish that they measure the same underlying construct.
 
-*To be completed by Alex.*
+#### Separate and joint regression models
+
+We initially fit separate linear regression models for each anxiety measure, controlling for survey-level differences. We subsequently include both statistics and mathematics anxiety within each scale family to investigate their conditional associations with attainment. As in the primary analysis, CR2 cluster-robust confidence intervals account for potential within-survey dependence.
+
+```{r maths-anxiety-separate-models, include=FALSE}
+anxiety_vars <- c(
+  "STARS" = "stars_mean",
+  "R-MARS-S" = "rmars_s_mean",
+  "STARS-M" = "stars_m_mean",
+  "R-MARS" = "rmars_mean"
+)
+
+anxiety_comparison <- purrr::imap_dfr(
+  anxiety_vars, function(variable, scale) {
+
+    model <- lm(
+      reformulate(c(variable, "factor(survey_id)"),
+                  response = "grade_scaled"),
+      data = analysis_data
+    )
+
+    result <- clubSandwich::coef_test(
+      model,
+      vcov = "CR2",
+      cluster = analysis_data$survey_id,
+      test = "Satterthwaite"
+    )
+
+    result <- result[result$Coef == variable, ]
+
+    tibble(
+      Scale = scale,
+      N = nobs(model),
+      Coefficient = result$beta,
+      Lower_CI = result$beta -
+        qt(0.975, result$df_Satt) * result$SE,
+      Upper_CI = result$beta +
+        qt(0.975, result$df_Satt) * result$SE,
+      P_value = result$p_Satt
+    )
+  }
+)
+```
+
+```{r maths-anxiety-adjusted-models, echo=FALSE}
+model_stars_joint <- lm(
+  grade_scaled ~ stars_mean + stars_m_mean +
+    factor(survey_id),
+  data = analysis_data
+)
+
+model_rmars_joint <- lm(
+  grade_scaled ~ rmars_s_mean + rmars_mean +
+    factor(survey_id),
+  data = analysis_data
+)
+```
+
+```{r maths-anxiety-extract-results, include=FALSE}
+extract_cluster_results <- function(model, variables, label) {
+
+  result <- clubSandwich::coef_test(
+    model,
+    vcov = "CR2",
+    cluster = analysis_data$survey_id,
+    test = "Satterthwaite"
+  )
+
+  result <- result[result$Coef %in% variables, ]
+
+  tibble(
+    Model = label,
+    Predictor = result$Coef,
+    Coefficient = result$beta,
+    Lower_CI = result$beta -
+      qt(0.975, result$df_Satt) * result$SE,
+    Upper_CI = result$beta +
+      qt(0.975, result$df_Satt) * result$SE,
+    P_value = result$p_Satt
+  )
+}
+
+joint_results <- bind_rows(
+  extract_cluster_results(
+    model_stars_joint,
+    c("stars_mean", "stars_m_mean"),
+    "STARS family"
+  ),
+  extract_cluster_results(
+    model_rmars_joint,
+    c("rmars_s_mean", "rmars_mean"),
+    "R-MARS family"
+  )
+)
+```
+
+```{r anxiety-coefficient-plot, echo=FALSE, fig.width=6.5, fig.height=3.5, fig.cap="Estimated change in attainment per one-point increase in anxiety score, with cluster-robust 95% confidence intervals. All models adjust for survey effects."}
+plot_separate <- anxiety_comparison %>%
+  mutate(Adjustment = "Separate model")
+
+plot_joint <- joint_results %>%
+  mutate(
+    Scale = recode(
+      Predictor,
+      stars_mean = "STARS",
+      rmars_s_mean = "R-MARS-S",
+      stars_m_mean = "STARS-M",
+      rmars_mean = "R-MARS"
+    ),
+    Adjustment = "Joint model"
+  )
+
+coefficient_data <- bind_rows(plot_separate, plot_joint) %>%
+  mutate(
+    Scale = factor(
+      Scale,
+      levels = c("R-MARS", "R-MARS-S", "STARS-M", "STARS")
+    )
+  )
+
+ggplot(coefficient_data,
+       aes(x = Scale, y = Coefficient, colour = Adjustment)) +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             colour = "grey50") +
+  geom_pointrange(
+    aes(ymin = Lower_CI, ymax = Upper_CI),
+    position = position_dodge(width = 0.5)
+  ) +
+  coord_flip() +
+  scale_colour_manual(values = c(
+    "Separate model" = "steelblue",
+    "Joint model" = "firebrick"
+  )) +
+  labs(
+    x = NULL,
+    y = "Estimated change in attainment (pp)",
+    colour = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+As shown in Figure 3, all four anxiety measures were negatively associated with attainment when considered separately, with estimated coefficients ranging from −3.15 to −2.73 attainment points per one-point increase in anxiety.
+
+After including both anxiety measures within each scale family, the statistics anxiety coefficients remained negative, at $-2.86$ for STARS and $-2.18$ for R-MARS-S, with both confidence intervals excluding zero. In contrast, the mathematics anxiety coefficients attenuated towards zero, with confidence intervals including zero.
+
+These findings suggest that statistics anxiety retains an association with attainment after accounting for mathematics anxiety.
+
+#### Comparison of explained variance
+
+To investigate the additional explanatory power of each anxiety measure, we compare the proportion of variance explained ($R^2$) by models containing statistics anxiety, mathematics anxiety and both predictors. Survey effects and the analysis sample are held constant throughout.
+
+```{r anxiety-r2-comparison, echo=FALSE}
+compare_r2 <- function(stats_var, maths_var) {
+
+  survey_model <- lm(
+    grade_scaled ~ factor(survey_id),
+    data = analysis_data
+  )
+
+  stats_model <- lm(
+    reformulate(c(stats_var, "factor(survey_id)"),
+                response = "grade_scaled"),
+    data = analysis_data
+  )
+
+  maths_model <- lm(
+    reformulate(c(maths_var, "factor(survey_id)"),
+                response = "grade_scaled"),
+    data = analysis_data
+  )
+
+  joint_model <- lm(
+    reformulate(c(stats_var, maths_var,
+                  "factor(survey_id)"),
+                response = "grade_scaled"),
+    data = analysis_data
+  )
+
+  stopifnot(
+    all(c(nobs(survey_model), nobs(stats_model),
+          nobs(maths_model), nobs(joint_model)) ==
+          nrow(analysis_data))
+  )
+
+  r2_survey <- summary(survey_model)$r.squared
+  r2_stats <- summary(stats_model)$r.squared
+  r2_maths <- summary(maths_model)$r.squared
+  r2_joint <- summary(joint_model)$r.squared
+
+  100 * c(
+    r2_survey,
+    r2_stats,
+    r2_maths,
+    r2_joint,
+    r2_joint - r2_maths,
+    r2_joint - r2_stats
+  )
+}
+
+r2_comparison <- data.frame(
+  Model = c(
+    "Survey only",
+    "Survey + statistics anxiety",
+    "Survey + mathematics anxiety",
+    "Survey + both",
+    "Additional statistics anxiety",
+    "Additional mathematics anxiety"
+  ),
+  STARS = compare_r2("stars_mean", "stars_m_mean"),
+  `R-MARS` = compare_r2("rmars_s_mean", "rmars_mean"),
+  check.names = FALSE
+)
+
+knitr::kable(
+  r2_comparison,
+  digits = 2,
+  caption = "Explained variance (%) and additional contributions (percentage points) of anxiety measures."
+)
+```
+
+Survey effects alone explain 26.35% of attainment variation. Statistics anxiety provides a greater additional contribution to explained variance than mathematics anxiety in both scale families (0.43 versus 0.01 percentage points for STARS and 0.34 versus 0.08 for R-MARS). However, these increases are modest, suggesting that much of the explanatory information is shared between the two anxiety measures.
+
+#### Comparing regression coefficients
+
+Although the statistics anxiety confidence intervals exclude zero in the joint models while the mathematics anxiety intervals do not, this does not necessarily establish a difference between the two coefficients. We therefore directly estimate the difference between the statistics and mathematics anxiety coefficients by reparameterising each joint model using the average and half-difference of the two anxiety scores.
+
+```{r maths-anxiety-coefficient-difference, echo=FALSE}
+contrast_data <- analysis_data %>%
+  mutate(
+    stars_average = (stars_mean + stars_m_mean) / 2,
+    stars_difference = (stars_mean - stars_m_mean) / 2,
+    rmars_average = (rmars_s_mean + rmars_mean) / 2,
+    rmars_difference = (rmars_s_mean - rmars_mean) / 2
+  )
+
+model_stars_contrast <- lm(
+  grade_scaled ~ stars_average + stars_difference +
+    factor(survey_id),
+  data = contrast_data
+)
+
+model_rmars_contrast <- lm(
+  grade_scaled ~ rmars_average + rmars_difference +
+    factor(survey_id),
+  data = contrast_data
+)
+
+contrast_results <- bind_rows(
+  extract_cluster_results(
+    model_stars_contrast,
+    "stars_difference",
+    "STARS family"
+  ),
+  extract_cluster_results(
+    model_rmars_contrast,
+    "rmars_difference",
+    "R-MARS family"
+  )
+) %>%
+  select(-Predictor)
+
+knitr::kable(
+  contrast_results,
+  digits = 3,
+  col.names = c("Scale family", "Difference",
+                "Lower CI", "Upper CI", "p-value"),
+  caption = "Statistics minus mathematics anxiety coefficients, with cluster-robust 95% confidence intervals."
+)
+```
+
+The estimated differences are negative in both scale families, indicating stronger estimated negative associations for statistics anxiety per one-point increase in the measured score. However, both confidence intervals include zero. Consequently, there is insufficient evidence to conclude that statistics anxiety has a stronger association with attainment than mathematics anxiety.
+
+#### Multicollinearity
+
+```{r maths-anxiety-multicollinearity, include=FALSE}
+anxiety_within <- analysis_data %>%
+  group_by(survey_id) %>%
+  mutate(across(
+    c(stars_mean, stars_m_mean, rmars_s_mean, rmars_mean),
+    ~ .x - mean(.x)
+  )) %>%
+  ungroup()
+
+r_stars <- cor(
+  anxiety_within$stars_mean,
+  anxiety_within$stars_m_mean
+)
+
+r_rmars <- cor(
+  anxiety_within$rmars_s_mean,
+  anxiety_within$rmars_mean
+)
+
+vif_results <- tibble(
+  Model = c("STARS family", "R-MARS family"),
+  Within_survey_r = c(r_stars, r_rmars),
+  VIF = 1 / (1 - Within_survey_r^2)
+)
+```
+
+After accounting for survey differences, the correlations between statistics and mathematics anxiety remain high (0.864 and 0.828 for the STARS and R-MARS families, respectively). The corresponding variance inflation factors of 3.94 and 3.19 indicate that multicollinearity reduces the precision of the individual coefficient estimates. This limits our ability to distinguish their separate associations with attainment.
 
 ### Interpretation and limitations
 
@@ -1027,3 +1350,8 @@ Give a short summary of your approach, specifying the type of analysis you used 
 
 This is the main body of the report, which should make clear how you arrived at the values quoted in the first section. This should be in a similar style to the lecture notes for this course, with a mix of text, R code, and output generated by the code. It may be helpful to think of the intended audience as a classmate who has not yet engaged with the project – you can assume a good level of statistical background knowledge, but you will need to give a concise explanation of the important features of the dataset and your specific analysis choices. There is no specific page limit, since it will depend on the amount of code and plots included, but should be unlikely to need more than 6 pages.
 
+
+## Appendix: R code
+
+```{r code-appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
