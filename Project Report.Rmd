@@ -569,7 +569,7 @@ There are two main limitations when interpreting these anxiety scores. Under the
 The other limitation is that averaging all items on a questionnaire into a single overall score treats each type of anxiety as one uniform trait. Both STARS and RMARS cover distinct fears such as test anxiety and fear of asking for help, and combining them into one mean could hide differences in how each aspect relates to attainment.
 
 
-## Statistical analysis and effect size
+### Statistical analysis and effect size
 
 ### Analytical approach
 
