@@ -16,7 +16,7 @@ library(tidyverse)
 ```
 
 
-```{r load-data,include=FALSE, message=FALSE, warning=FALSE}
+```{r load data,include=FALSE, message=FALSE, warning=FALSE}
 # Load the SMARVUS dataset
 data_file <- "smarvus_complete_050524.csv"
 
@@ -48,7 +48,7 @@ We used individual-level SMARVUS data, standardising academic attainment across 
 
 #### Initial Inspection and Grade Availability
 
-The SMARVUS dataset contained 12,570 observations and 788 variables. We checked for identical rows and missing or duplicated participant identifiers ('unique_id'); none were found. Missing responses were investigated with reference to the variables required for this analysis rather than excluding participants with missing entries in other places of the questionnaire. Statistics attainment was recorded in 'grade', with 1820 participants having a grade entry other than 'NA' or 'Not Available'.
+The SMARVUS dataset contained 12,570 observations and 788 variables, with no duplicate rows or missing or duplicated participant IDs. We considered missingness only in variables required for our analysis. Of the original participants, 1,820 had a recorded attainment grade.
 
 ```{r initial data inspection, include=FALSE}
 
@@ -66,7 +66,7 @@ data_summary
 
 
 
-```{r recorded-grades, include=FALSE}
+```{r recorded grades, include=FALSE}
 
 # Participants with recorded grades
 smarvus_grades <- smarvus_raw %>%
@@ -78,18 +78,18 @@ nrow(smarvus_grades)
 #### Standardising Attainment Across Institutions
 
 
-Reported grades were recorded differently across the participating surveys. This included different numerical scales, letter grades and ordinal categories. We examined each institution's lowest and highest documented grades before we constructed a comparable attainment variable. Supported numerical marks (0--100, 0--20, 0--10 and 1--10) were linearly rescaled to a common 0--100 range:
+Grades were recorded using different numerical and letter-grade systems across surveys. Supported numerical scales (0--100, 0--20, 0--10 and 1--10) were standardised to a 0--100 range using:
 
 \[
 \text{Scaled grade} = 100\,\frac{\text{Observed grade} - \text{Lowest possible grade}}{\text{Highest possible grade} - \text{Lowest possible grade}}.
 \]
 
-To keep observations that used letter grades, we used the midpoint of the applicable institution-specific percentage band as an estimated numerical mark. Grade categories that could not be converted reasonably or defensibly, including the 1--5 ordinal systems, ambiguous entries and values outside continuous-attainment datasets were excluded. This left us with 1362 converted numerical grades and 320 estimated letter grades (1682 observations in total). Grade-band midpoints are approximations, and it is important to note that converting to a common range does not remove the differences in grading standards across different institutions.
+Letter grades were converted using midpoints of institution-specific percentage bands, informed by published grading guidance for York University (York University, 2012), Brawijaya University (Universitas Brawijaya, 2015) and the University of Limerick's Faculty of Education and Health Sciences (University of Limerick, n.d.). Grades that could not be converted reliably, including MEF University letter grades, unsupported ordinal grading systems and ambiguous multiple-grade entries, were excluded.
+
+This retained 1,362 numerical grades and 310 estimated letter grades (1,672 participants). Although midpoint conversions are approximate, they allow greater data retention without assuming that grading standards are equivalent across institutions. We also retained 16 recorded zero grades, including 12 from UC Louvain, as we could not distinguish genuine low attainment from non-attendance reliably.
 
 
-
-
-```{r grade-systems, include=FALSE}
+```{r grade systems, include=FALSE}
 # Compare grading systems across surveys
 grade_summary <- smarvus_grades %>%
   group_by(country, survey_id, grade_low, grade_high) %>%
@@ -104,7 +104,7 @@ grade_summary <- smarvus_grades %>%
 print(n=22, grade_summary)
 ```
 
-```{r grade-boundaries, include=FALSE}
+```{r grade boundaries, include=FALSE}
 # Institution-specific letter grade boundaries
 
 grade_boundaries <- bind_rows(
@@ -121,19 +121,12 @@ grade_boundaries <- bind_rows(
     lower = c(90, 80, 75, 70, 65, 60, 55, 50, 40, 0),
     upper = c(100, 89, 79, 74, 69, 64, 59, 54, 49, 39)
   ),
-
-  tibble(
-    survey_id = "mef",
-    grade = c("A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F"),
-    lower = c(90, 80, 75, 70, 65, 60, 55, 50, 45, 35, 0),
-    upper = c(100, 89, 79, 74, 69, 64, 59, 54, 49, 44, 35)
-  ),
-
+  
   tibble(
     survey_id = "limerick",
-    grade = c("A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "F"),
-    lower = c(80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 0),
-    upper = c(100, 79, 74, 69, 64, 59, 54, 49, 44, 39, 35)
+    grade = c("A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "F"),
+    lower = c(80, 75, 70, 65, 60, 55, 50, 40, 35, 0),
+    upper = c(100, 80, 75, 70, 65, 60, 55, 50, 40, 35)
   )
 ) %>%
   mutate(
@@ -147,7 +140,7 @@ stopifnot(!anyDuplicated(grade_boundaries[c("survey_id", "grade")]))
 
 
 
-```{r prepare-grades, include=FALSE}
+```{r prepare grades, include=FALSE}
 # Prepare numerical grades
 smarvus_prepared <- smarvus_raw %>%
   mutate(
@@ -172,10 +165,14 @@ smarvus_prepared <- smarvus_raw %>%
       grade_num <= grade_high_num) %>%
 
   # Add letter-grade midpoint conversions
+  # MEF is excluded because its percentage boundaries could not be verified   from institutional documentation.
+
   left_join(
     grade_boundaries %>%
+      filter(survey_id != "mef") %>%
       select(survey_id, grade, grade_midpoint),
-    by = c("survey_id", "grade_clean" = "grade")) %>%
+    by = c("survey_id", "grade_clean" = "grade")
+  ) %>%
 
   # Create a single attainment variable
   mutate(
@@ -196,7 +193,7 @@ smarvus_prepared %>%
   count(grade_method)
 ```
 
-```{r unresolved-grades, include=FALSE}
+```{r unresolved grades, include=FALSE}
 # Inspect observations without a usable converted grade
 smarvus_prepared %>%
   filter(
@@ -208,10 +205,68 @@ smarvus_prepared %>%
   count(survey_id, grade_clean, sort = TRUE)
 ```
 
+```{r verify letter grades, include=FALSE}
+# Check york university grade conversions
+smarvus_prepared %>%
+  filter(survey_id == "york_can", !is.na(grade_clean), grade_clean != "Not Available") %>%
+  count(grade_clean, grade_scaled, grade_method, sort = TRUE)
+
+# Check Brawijaya university grade conversions
+smarvus_prepared %>%
+  filter(survey_id == "brawijaya", !is.na(grade_clean), grade_clean != "Not Available") %>%
+  count(grade_clean, grade_scaled, grade_method, sort = TRUE)
+
+# Check mef university grade conversions
+smarvus_prepared %>%
+  filter(survey_id == "mef", !is.na(grade_clean), grade_clean != "Not Available") %>%
+  count(grade_clean, grade_scaled, grade_method, sort = TRUE)
+
+# Check limerick university grade conversions
+smarvus_prepared %>%
+  filter(survey_id == "limerick", !is.na(grade_clean), grade_clean != "Not Available") %>%
+  count(grade_clean, grade_scaled, grade_method, sort = TRUE)
+
+```
+
+```{r verify-numerical-grades, include=FALSE}
+# Check the numerical grading scales used across surveys and verify the ranges of the converted grades.
+
+numerical_checks <- smarvus_prepared %>%
+  filter(grade_method == "Numerical conversion") %>%
+  group_by(survey_id, grade_low_num, grade_high_num) %>%
+  summarise(n = n(),
+    original_min = min(grade_num),
+    original_max = max(grade_num),
+    converted_min = min(grade_scaled),
+    converted_max = max(grade_scaled),
+    .groups = "drop"
+  ) %>%
+  arrange(grade_low_num, grade_high_num, survey_id)
+
+print(numerical_checks, n = Inf)
+```
+
+```{r investigate-zero-grades, include=FALSE}
+# Identify recorded numerical grades of zero
+# and examine which universities they come from.
+
+zero_grades <- smarvus_prepared %>%
+  filter(
+    grade_method == "Numerical conversion",
+    grade_num == 0
+  ) %>%
+  count(survey_id, sort = TRUE)
+
+print(zero_grades, n = Inf)
+
+# Total number of zero grades
+sum(zero_grades$n)
+```
+
+
 #### Attention Checks and Exclusion Criteria
 
-
-We assessed response quality using the six attention check items and the 'attention_amnesty' response. Participants were excluded if they answered at least one administered check incorrectly or explicitly selected 'No' to the amnesty question. Missing check or amnesty responses were not interpreted as failures as the questions were not necessarily recorded for every survey. Under these rules, 1542 participants remained after attainment and quality screening. Anxiety-scale completeness criteria are applied in the next section.
+Participants were excluded if they failed any of the six recorded attention checks or explicitly answered 'No' to the attention-amnesty question. Using all six checks rather than only the first two resulted in 37 additional exclusions. Missing responses were not treated as failures because the administration of all checks could not be confirmed across surveys. Consequently, 157 retained participants had no recorded attention checks and 70 had missing amnesty responses. This left 1,534 participants after attainment and response-quality screening, as summarised below.
 
 ```{r attention-checks, include=FALSE}
 # Attention check variables
@@ -247,6 +302,7 @@ smarvus_prepared %>%
 
 ```
 
+
 ```{r participant-exclusions, include=FALSE}
 # Participants with usable attainment
 valid_grades <- smarvus_prepared %>%
@@ -263,7 +319,36 @@ smarvus_clean <- amnesty_passed %>%
   filter(n_checks_failed == 0)
 ```
 
-The participant counts at each stage are summarised in the table below. Of the 1542 kept observations, 165 had no recorded attention check answers and 70 had a missing amnesty response. Because estimated letter grades are approximations, we also test whether excluding them affects our findings in the sensitivity analyses below.
+```{r verify-attention-checks, include=FALSE}
+# Compare exclusions using the first two attention checks
+# against exclusions using all six checks.
+
+attention_comparison <- amnesty_passed %>%
+  mutate(
+    first_two_failed =
+      (!is.na(Q7.1_24) & Q7.1_24 != 1) |
+      (!is.na(Q8.1_21) & Q8.1_21 != 5)
+  ) %>%
+  summarise(
+    Eligible = n(),
+    Failed_first_two = sum(first_two_failed),
+    Failed_any_six = sum(n_checks_failed > 0),
+    Additional_exclusions = sum(
+      !first_two_failed & n_checks_failed > 0
+    ),
+    Missing_all_checks = sum(n_checks_answered == 0)
+  )
+
+print(attention_comparison)
+
+# Check missing attention-check and amnesty responses among retained participants
+
+smarvus_clean %>%
+  summarise(
+    No_attention_checks = sum(n_checks_answered == 0),
+    Missing_amnesty = sum(is.na(attention_amnesty))
+  )
+```
 
 ```{r exclusion-table, echo=FALSE}
 exclusion_flow <- tibble(
@@ -287,18 +372,29 @@ exclusion_flow <- tibble(
     Excluded = lag(N) - N
   )
 
-knitr::kable(exclusion_flow)
+knitr::kable(exclusion_flow, caption = "Participant exclusions at each stage of data preparation")
 ```
 
+Additional checks identified 21 participants (1.4%) with constant responses on at least one anxiety scale and five (0.3%) who completed the survey in under 10 minutes. None of the five rapid respondents showed straight-lining or failed any recorded attention checks. We retained these participants because neither pattern alone provided sufficient evidence of inattention.
+
+After applying the anxiety-scale completeness criteria, the final sample contained 1,501 participants (11.9% of the original dataset) across 19 of the original 93 surveys. Survey representation differed substantially, with Sussex contributing 21.9% of the final sample compared with 3.3% originally. This introduces potential selection bias and limits generalisability, which cannot be fully addressed by including survey fixed effects.
+
 ```{r validation-export, include=FALSE}
+# Final validation of the cleaned dataset
+
 stopifnot(
+  nrow(smarvus_clean) == 1534,
+  !anyNA(smarvus_clean$unique_id),
+  !anyDuplicated(smarvus_clean$unique_id),
   !anyNA(smarvus_clean$grade_scaled),
-  all(is.finite(smarvus_clean$grade_scaled)),
-  all(smarvus_clean$grade_scaled >= 0),
-  all(smarvus_clean$grade_scaled <= 100),
+  all(between(smarvus_clean$grade_scaled, 0, 100)),
   all(smarvus_clean$n_checks_failed == 0),
-  n_distinct(smarvus_clean$unique_id) == nrow(smarvus_clean)
+  !any(smarvus_clean$attention_amnesty == "No", na.rm = TRUE),
+  sum(exclusion_flow$Excluded, na.rm = TRUE) ==
+    nrow(smarvus_raw) - nrow(smarvus_clean)
 )
+
+cat("All cleaned dataset checks passed!\n")
 
 write_csv(smarvus_clean, "smarvus_clean.csv")
 write_csv(exclusion_flow, "exclusion_flow.csv")
@@ -500,6 +596,107 @@ n_excluded_80 <- n_clean - n_scored_80
 
 
 ```
+
+```{r EMMA C selection bias check, include=FALSE}
+# Compare university representation in the original dataset and final analysis sample.
+
+original_unis <- smarvus_raw %>%
+  count(survey_id, name = "Original_N")
+
+final_unis <- smarvus_scored_80 %>%
+  count(survey_id, name = "Final_N")
+
+university_comparison <- original_unis %>%
+  full_join(final_unis, by = "survey_id") %>%
+  mutate(
+    Final_N = replace_na(Final_N, 0L),
+    Original_pct = round(100 * Original_N / sum(Original_N), 2),
+    Final_pct = round(100 * Final_N / sum(Final_N), 2),
+    Retention_pct = round(100 * Final_N / Original_N, 2)
+  ) %>%
+  arrange(desc(Final_N))
+
+print(university_comparison, n = Inf)
+```
+
+
+```{r response-quality-checks, include=FALSE}
+# Additional response-quality checks
+# Investigate straight-lining and unusually short survey completion times in the final analysis sample. These are diagnostic checks rather than automatic exclusion criteria.
+
+# Identify participants giving constant responses within each anxiety scale (excluding attention-check items).
+
+straightlining <- smarvus_scored_80 %>%
+  mutate(
+    constant_stars = apply(
+      select(., Q7.1_1:Q7.1_23), 1,
+      function(x) length(unique(na.omit(x))) == 1
+    ),
+    constant_rmars_s = apply(
+      select(., Q7.2_1:Q7.2_23), 1,
+      function(x) length(unique(na.omit(x))) == 1
+    ),
+    constant_stars_m = apply(
+      select(., Q8.1_1:Q8.1_20), 1,
+      function(x) length(unique(na.omit(x))) == 1
+    ),
+    constant_rmars = apply(
+      select(., Q8.2_1:Q8.2_24), 1,
+      function(x) length(unique(na.omit(x))) == 1
+    )
+  ) %>%
+  mutate(
+    n_constant_scales = constant_stars + constant_rmars_s +
+      constant_stars_m + constant_rmars
+  )
+
+# Summarise straight-lining
+straightlining_summary <- straightlining %>%
+  summarise(
+    Participants = n(),
+    STARS = sum(constant_stars),
+    RMARS_S = sum(constant_rmars_s),
+    STARS_M = sum(constant_stars_m),
+    RMARS = sum(constant_rmars),
+    Any_scale = sum(n_constant_scales >= 1),
+    All_four_scales = sum(n_constant_scales == 4)
+  )
+
+print(straightlining_summary)
+
+
+# Investigate survey completion times.
+# Duration is assumed to be measured in seconds.
+
+duration_summary <- straightlining %>%
+  summarise(
+    Participants = n(),
+    Missing_duration = sum(is.na(duration)),
+    Median_minutes = round(median(duration / 60, na.rm = TRUE), 1),
+    Under_5_minutes = sum(duration < 300, na.rm = TRUE),
+    Under_10_minutes = sum(duration < 600, na.rm = TRUE),
+    Under_15_minutes = sum(duration < 900, na.rm = TRUE)
+  )
+
+print(duration_summary, width = Inf)
+
+
+# Check whether rapid respondents also showed straight-lining or failed any recorded attention checks.
+
+rapid_responses <- straightlining %>%
+  filter(!is.na(duration), duration < 600) %>%
+  select(
+    survey_id,
+    duration,
+    n_checks_answered,
+    n_checks_failed,
+    n_constant_scales
+  ) %>%
+  arrange(duration)
+
+print(rapid_responses, n = Inf)
+```
+
 
 ```{r score-complete-sensitivity, include=FALSE}
 # Construct strict 100% complete-case dataset for sensitivity analysis
@@ -1273,6 +1470,12 @@ Higher statistics anxiety was associated with lower academic attainment, even af
 ## References
 
 Terry, J., et al. (2023). Data from an International Multi-Centre Study of Statistics and Mathematics Anxieties and Related Variables in University Students (the SMARVUS Dataset). *Journal of Open Psychology Data*, 11(1), 8. https://doi.org/10.5334/jopd.80
+
+**University of Limerick, Faculty of Education and Health Sciences.** (n.d.). *Module grading and award classification*. https://www.ul.ie/ehs/student-grading-and-award-classification
+
+**Universitas Brawijaya, Program of Information Technology and Computer Science.** (2015). *Letter of statement No. 4215/UN10.36/AK/2015: Grade conversion table*. https://filkom.ub.ac.id/wp-content/uploads/2021/04/07_Pedoman_Penilaian_dan_Perhitungan_Indeks_Prestasi_PTIIK_ingg.pdf
+
+**York University.** (2012). *Faculty rules: Grading*. 2012–2013 Undergraduate Calendar. https://calendars.registrar.yorku.ca/2012-2013/faculty_rules/AP/grading.htm
 
 ## Appendix: R code
 
